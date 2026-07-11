@@ -1,11 +1,11 @@
 {
-  "webVersion": "1.0.17",
+  "webVersion": "1.0.20",
   "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip",
-  "minNativeCode": 8,
+  "minNativeCode": 21,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
-    "versionCode": 18,
+    "versionCode": 21,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "인앱 업데이트"
+    "note": "최근통화 화살표·날짜시간 + 콜스크립트 크게(수신도) + 발신 전 문자·녹음 미리보기 + 메시지 수신번호 수정 + 상단 여백↓"
   }
 }
