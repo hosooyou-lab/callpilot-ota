@@ -1,5 +1,5 @@
 {
-  "webVersion": "1.0.6",
+  "webVersion": "1.0.7",
   "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip",
   "minNativeCode": 8,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용."
