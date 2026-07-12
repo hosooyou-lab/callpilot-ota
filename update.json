@@ -4,8 +4,8 @@
   "minNativeCode": 24,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
-    "versionCode": 25,
+    "versionCode": 26,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "새 앱 아이콘·스플래시(콜파일럿 브랜드) + 오늘 현황 카드 + UI 개편"
+    "note": "새 아이콘(헤드셋+수화기+나침반) + MMS 사진첨부 수정 + 최근통화 실시간갱신 + 동기화 자동연결"
   }
 }
