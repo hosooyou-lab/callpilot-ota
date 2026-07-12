@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>콜파일럿 관리자 승인</title>
+<style>
+  :root{ --bg:#161310; --card:#1e1a16; --line:#3a352f; --ink:#f0ece6; --dim:#a29a8f; --acc:#c96442; --ok:#34b56e; --err:#e8776b; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Pretendard',-apple-system,'Malgun Gothic',sans-serif; padding:18px; max-width:560px; margin:0 auto; }
+  h1{ font-size:19px; margin:6px 0 4px; }
+  .sub{ color:var(--dim); font-size:13px; margin:0 0 16px; }
+  label{ display:block; font-size:12px; color:var(--dim); font-weight:700; margin:14px 0 6px; }
+  input{ width:100%; padding:13px 14px; font-size:16px; border-radius:10px; border:1px solid var(--line); background:#0f0d0a; color:#fff; outline:none; }
+  input:focus{ border-color:var(--acc); }
+  button{ width:100%; margin-top:12px; padding:14px; font-size:15px; font-weight:800; border:none; border-radius:10px; background:var(--acc); color:#fff; cursor:pointer; }
+  button.sec{ background:var(--card); border:1px solid var(--line); color:var(--ink); }
+  .msg{ font-size:13px; min-height:18px; margin-top:8px; }
+  .card{ background:#0f0d0a; border:1px solid var(--line); border-radius:11px; padding:13px; margin-top:10px; }
+  .meta{ font-size:12px; color:#8a8172; }
+  .dev{ font-family:Consolas,monospace; font-size:13px; color:#ffd9a8; word-break:break-all; margin:6px 0; }
+  .row{ display:flex; gap:8px; }
+  .apv{ flex:1; background:linear-gradient(180deg,#1f9d5b,#178048); }
+  .rej{ flex:0 0 auto; width:auto; padding:13px 18px; background:var(--card); border:1px solid var(--line); }
+  .fbmsg{ font-size:14px; color:var(--ink); white-space:pre-wrap; margin-top:6px; }
+  hr{ border:none; border-top:1px solid var(--line); margin:24px 0; }
+</style>
+</head>
+<body>
+  <h1>🔑 콜파일럿 관리자 승인</h1>
+  <p class="sub">폰·PC 어디서든 여기서 인증 요청을 승인합니다. 개인키는 서버에만 있어 안전합니다.</p>
+
+  <label>관리자 비밀번호</label>
+  <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password">
+
+  <hr>
+  <h1 style="font-size:16px">📥 인증 요청</h1>
+  <button id="loadReq" class="sec">요청 불러오기 / 새로고침</button>
+  <div id="reqMsg" class="msg"></div>
+  <div id="reqList"></div>
+
+  <hr>
+  <h1 style="font-size:16px">📣 받은 의견</h1>
+  <button id="loadFb" class="sec">의견 불러오기 / 새로고침</button>
+  <div id="fbMsg" class="msg"></div>
+  <div id="fbList"></div>
+
+<script>
+const SUPA_URL='https://sihczrtbjxnrgeneyyhq.supabase.co';
+const SUPA_PUB='sb_publishable_ULaMencvyJO1B0qcn-B8Sw_SmyXkqWI';
+const FN=SUPA_URL+'/functions/v1/admin-approve';
+const H={ 'apikey':SUPA_PUB, 'Authorization':'Bearer '+SUPA_PUB, 'Content-Type':'application/json' };
+const pwEl=document.getElementById('pw');
+try{ pwEl.value=sessionStorage.getItem('cp_admin_pw')||''; }catch(e){}
+pwEl.addEventListener('input',()=>{ try{ sessionStorage.setItem('cp_admin_pw',pwEl.value); }catch(e){} });
+function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+async function getRows(path){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{ headers:H });
+  const t=await r.text(); let d=null; try{ d=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw new Error('HTTP '+r.status+' '+(t||'').slice(0,120));
+  return d||[];
+}
+async function callFn(body){
+  const r=await fetch(FN,{ method:'POST', headers:H, body:JSON.stringify(body) });
+  const t=await r.text(); let d=null; try{ d=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw new Error((d&&d.error)||('HTTP '+r.status));
+  return d;
+}
+
+async function loadReq(){
+  const msg=document.getElementById('reqMsg'), list=document.getElementById('reqList');
+  msg.style.color='var(--dim)'; msg.textContent='불러오는 중…';
+  try{
+    const rows=await getRows('license_requests?status=eq.pending&select=id,device_code,platform,label,created_at&order=created_at.asc');
+    if(!rows.length){ list.innerHTML=''; msg.style.color='#6f675d'; msg.textContent='대기 중인 요청이 없습니다.'; return; }
+    msg.style.color='var(--ok)'; msg.textContent=rows.length+'건 대기 중';
+    list.innerHTML=rows.map(r=>`<div class="card">
+      <div class="meta">${esc(r.platform||'')} · ${esc((r.created_at||'').replace('T',' ').slice(0,16))} ${r.label?('· '+esc(r.label)):''}</div>
+      <div class="dev">${esc(r.device_code)}</div>
+      <div class="row">
+        <button class="apv" data-id="${esc(r.id)}" data-dev="${esc(r.device_code)}">✅ 승인</button>
+        <button class="rej" data-id="${esc(r.id)}">거절</button>
+      </div>
+      <div class="msg apvmsg"></div>
+    </div>`).join('');
+    list.querySelectorAll('.apv').forEach(b=>b.onclick=()=>act(b,'approve'));
+    list.querySelectorAll('.rej').forEach(b=>b.onclick=()=>act(b,'reject'));
+  }catch(e){ msg.style.color='var(--err)'; msg.textContent='실패: '+e.message; }
+}
+async function act(btn,action){
+  const box=btn.closest('.card').querySelector('.apvmsg');
+  const pw=(pwEl.value||'').trim();
+  if(!pw){ box.style.color='var(--err)'; box.textContent='관리자 비밀번호를 입력하세요'; pwEl.focus(); return; }
+  btn.disabled=true; box.style.color='var(--dim)'; box.textContent=action==='approve'?'승인 중…':'거절 중…';
+  try{
+    await callFn({ action, id:btn.getAttribute('data-id'), device_code:btn.getAttribute('data-dev'), password:pw });
+    box.style.color='var(--ok)'; box.textContent=action==='approve'?'✅ 승인됨 — 상대 앱이 곧 자동 활성화됩니다':'거절됨';
+    setTimeout(loadReq, 1400);
+  }catch(e){ btn.disabled=false; box.style.color='var(--err)'; box.textContent='실패: '+e.message; }
+}
+async function loadFb(){
+  const msg=document.getElementById('fbMsg'), list=document.getElementById('fbList');
+  msg.style.color='var(--dim)'; msg.textContent='불러오는 중…';
+  try{
+    const rows=await getRows('feedback?select=device_code,platform,message,created_at&order=created_at.desc&limit=100');
+    if(!rows.length){ list.innerHTML=''; msg.style.color='#6f675d'; msg.textContent='아직 받은 의견이 없습니다.'; return; }
+    msg.style.color='var(--ok)'; msg.textContent=rows.length+'건';
+    list.innerHTML=rows.map(r=>`<div class="card">
+      <div class="meta">${esc(r.platform||'')} · ${esc((r.created_at||'').replace('T',' ').slice(0,16))} · ${esc((r.device_code||'').slice(0,12))}</div>
+      <div class="fbmsg">${esc(r.message)}</div>
+    </div>`).join('');
+  }catch(e){ msg.style.color='var(--err)'; msg.textContent='실패: '+e.message; }
+}
+document.getElementById('loadReq').onclick=loadReq;
+document.getElementById('loadFb').onclick=loadFb;
+</script>
+</body>
+</html>
