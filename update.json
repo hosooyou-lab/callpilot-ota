@@ -1,11 +1,11 @@
 {
-  "webVersion": "1.0.28",
+  "webVersion": "1.0.29",
   "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip",
   "minNativeCode": 24,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
-    "versionCode": 29,
+    "versionCode": 30,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "수신전화 전체화면(스와이프받기·홀드거절) + 통화녹음 조회 수정 + 문자 사진첨부"
+    "note": "통화 자체녹음(양방향 시도→마이크 폴백) + 온라인 인증요청·승인 + 의견 보내기"
   }
 }
