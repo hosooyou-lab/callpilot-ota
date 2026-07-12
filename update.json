@@ -4,8 +4,8 @@
   "minNativeCode": 24,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
-    "versionCode": 24,
+    "versionCode": 25,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "설치차단 해제(문자권한 제거) + 폰통화 PC표시 + 통화전후 가운데정렬 + 화면 계속 켜두기(홀드) + 최근통화·콜스크립트·메시지 개선"
+    "note": "새 앱 아이콘·스플래시(콜파일럿 브랜드) + 오늘 현황 카드 + UI 개편"
   }
 }
