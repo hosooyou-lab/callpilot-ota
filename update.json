@@ -4,8 +4,8 @@
   "minNativeCode": 24,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
-    "versionCode": 36,
+    "versionCode": 38,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "녹음 중 스피커폰 자동전환(상대 목소리까지 녹음) + 통화 중 스크립트 공간 확대"
+    "note": "삼성 통화모드: 스크립트를 통화화면 위로 강제 표시(풀스크린 인텐트)"
   }
 }
