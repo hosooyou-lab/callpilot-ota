@@ -1,11 +1,11 @@
 {
-  "webVersion": "1.0.41",
+  "webVersion": "1.0.42",
   "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip",
   "minNativeCode": 24,
   "note": "webVersion 이 앱 내장 버전보다 높으면 폰이 dist.zip 을 받아 재설치 없이 적용.",
   "apk": {
     "versionCode": 41,
     "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/callpilot.apk",
-    "note": "뒤로가기=앱 안에서 뒤로(종료 안 함) + 결과태그 버튼 축소·통화화면 정리"
+    "note": "슬림 권한 빌드 준비 중 — 잠시 후 갱신"
   }
 }
