@@ -1,6 +1,6 @@
 {
   "webVersion": "1.0.43",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1043",
   "minNativeCode": 44,
   "note": "web 1.0.43 = 녹음 네이티브 재생(MediaPlayer)·실길이 표시 UI. minNativeCode 44 → b44+ 폰만 적용(재생 네이티브 메서드 필요). webVersion 이 앱 내장 버전보다 높을 때만 dist.zip 적용(다운그레이드 금지)."
 }
