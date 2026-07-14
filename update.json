@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.50",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1050",
+  "webVersion": "1.0.51",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1051",
   "minNativeCode": 44,
-  "note": "web 1.0.50 = 최근 통화 '전체 보기' 전용 전체화면 추가 — 앱 저장기록+폰 통화로그를 전부 병합해 모든 통화 이력을 날짜별로 표시(홈 미리보기는 최근 일부라 오래된 게 잘리던 것 해결). 최근통화 카드 우상단 '전체 보기' 버튼. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.51 = 자동발신 카드 정리: 대기 프리셋(3·5·10초)을 통화후대기 라인 오른쪽으로, 다음 대상 미리보기 제거, 삼성 통화모드를 시작/정지/다음번호 아래(맨밑)로, 줄간격 확대. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
 }
