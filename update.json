@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.46",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1046",
+  "webVersion": "1.0.47",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1047",
   "minNativeCode": 44,
-  "note": "web 1.0.46 = 고객 DB 동기화 확인 게이트 — 통화기록은 자동 병합하되, 고객(고객목록/DB)은 (재)연결 시 PC·모바일에 차이가 있으면 모바일에 '고객 DB를 동기화 하겠습니까?' 확인 후에만 합침(승인 전엔 양방향 미전송, 데이터 유실 없음). 차이 없으면 자동. + 1.0.45(삼성 스타일 하단 네비·키패드·고객DB·콜백)·1.0.44(녹음 자동정지) 포함. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.47 = 고객 동기화를 '새로 추가된 고객만' 델타로(기존 고객 수정·삭제는 안 건드림), (재)연결 시 새 고객 있으면 모바일 확인 후 반영. '전체 고객 동기화' 버튼(PC 동기화 카드)으로 필요할 때만 모든 고객 완전 일치(수정·삭제 포함). 통화기록은 자동. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
 }
