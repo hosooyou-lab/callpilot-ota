@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.48",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1048",
+  "webVersion": "1.0.49",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1049",
   "minNativeCode": 44,
-  "note": "web 1.0.48 = 삼성 전화앱 UI 정비: 최근통화 탭(날짜그룹·방향화살표·연속묶음)·최근통화로 스크롤·검색창 다크통일·고객DB ㄱㄴㄷ 정렬+인덱스바+추가/검색버튼·자동발신을 고객목록 아래로·섹션번호/스피커토글 제거·뒤로가기 항상 이전화면(홈에서 2번 눌러야 종료). minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.49 = 자동발신 3기능 추가: 진행 현황(진행바+진행 N/총·남은), 다음 대상 미리보기(발신중=다음, 대기중=첫 대상), 대기시간 프리셋(3·5·10초). + 1.0.48 삼성 UI 정비 포함. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
 }
