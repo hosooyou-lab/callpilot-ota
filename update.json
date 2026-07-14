@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.51",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1051",
+  "webVersion": "1.0.52",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1052",
   "minNativeCode": 44,
-  "note": "web 1.0.51 = 자동발신 카드 정리: 대기 프리셋(3·5·10초)을 통화후대기 라인 오른쪽으로, 다음 대상 미리보기 제거, 삼성 통화모드를 시작/정지/다음번호 아래(맨밑)로, 줄간격 확대. minNativeCode 44 → b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.52 = ① 녹음 재생 시크: 진행바를 눌러/끌어 원하는 시간으로 이동(현재/전체 시간 표시, 큰 터치영역). ② 발신·수신 통화도 스크립트·결과버튼 표시, 통화 끊은 뒤 결과입력창 유지(자동발신처럼 결과+메모 저장). ③ PC 완전 자동 동기화: 연결되면 모든 고객·통화기록·삭제가 양방향으로 완전히 일치(하나처럼), '전체 고객 동기화' 버튼 제거. minNativeCode 44 = b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
 }
