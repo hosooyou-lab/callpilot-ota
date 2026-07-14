@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.44",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1044",
+  "webVersion": "1.0.45",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1045",
   "minNativeCode": 44,
-  "note": "web 1.0.44 = 녹음 재생 자동정지(뒤로가기·다른 화면 전환·같은 화면 다른 곳 터치 시 네이티브 재생까지 stopPlayback). minNativeCode 44 → b44+ 폰만 적용(stopPlayback 네이티브 메서드 필요). webVersion 이 앱 내장 버전보다 높을 때만 적용(다운그레이드 금지)."
+  "note": "web 1.0.45 = 삼성 전화앱 스타일 하단 네비(키패드/최근기록/고객관리) + 키패드 화면 + 고객DB(전체 고객 목록·검색) + 콜백(다음 연락일·오늘 연락할 고객) + 상세창 통화 이력에 폰 시스템 통화기록 병합(최신 통화까지 표시). minNativeCode 44 → b44+ 폰만 적용. webVersion 이 앱 내장 버전보다 높을 때만 적용(다운그레이드 금지)."
 }
