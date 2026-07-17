@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.56",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1056",
+  "webVersion": "1.0.57",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1057",
   "minNativeCode": 44,
-  "note": "web 1.0.56 = 로그인 화면 CallPilot 로고를 크게 키움(세로 제약 해소, 표시 폭 99→225px). 1.0.55의 아이디 저장 체크박스·재로그인 버그 수정 포함. minNativeCode 44 = b44+ 폰만."
+  "note": "web 1.0.57 = 로고 마스크 PNG 투명여백 크롭(600×400→424×113)으로 모든 화면 로고 선명·확대 + 상단바 로고 96×22→131×30. minNativeCode 44 = b44+ 폰만."
 }
