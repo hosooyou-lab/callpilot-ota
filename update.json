@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.53",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1053",
+  "webVersion": "1.0.54",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1054",
   "minNativeCode": 44,
-  "note": "web 1.0.53 = ① 배분 CRM 로그인 게이트: 앱 시작 시 배분 CRM 직원 로그인 화면을 먼저 통과해야 진입(crmlogin.js 신규). ② 브랜드 교체: 한글 '콜파일럿' 표기를 전부 CallPilot 로고·문구로 교체(로그인 화면 등, assets/callpilot-logo.png 신규). minNativeCode 44 = b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.54 = 로그인·잠금·헤더의 CallPilot 로고가 폰에서 안 보이던 문제 수정 — 로고 이미지를 style.css에 base64로 내장(파일 경로 의존 제거). 1.0.53의 로그인 게이트·브랜드 교체 포함. minNativeCode 44 = b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
 }
