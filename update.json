@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.54",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1054",
+  "webVersion": "1.0.55",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1055",
   "minNativeCode": 44,
-  "note": "web 1.0.54 = 로그인·잠금·헤더의 CallPilot 로고가 폰에서 안 보이던 문제 수정 — 로고 이미지를 style.css에 base64로 내장(파일 경로 의존 제거). 1.0.53의 로그인 게이트·브랜드 교체 포함. minNativeCode 44 = b44+ 폰만. webVersion 이 내장보다 높을 때만 적용."
+  "note": "web 1.0.55 = ① 로그인 화면에 '아이디 저장' 체크박스(끄면 저장 안 함, 선택 기억) ② 로그아웃 후 재로그인 버튼이 안 눌리던 버그 수정. (1.0.54의 로고 base64 내장, 1.0.53의 로그인 게이트·CallPilot 브랜드 포함)"
 }
