@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.57",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1057",
+  "webVersion": "1.0.58",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1058",
   "minNativeCode": 44,
-  "note": "web 1.0.57 = 로고 마스크 PNG 투명여백 크롭(600×400→424×113)으로 모든 화면 로고 선명·확대 + 상단바 로고 96×22→131×30. minNativeCode 44 = b44+ 폰만."
+  "note": "web 1.0.58 = PC 라운드1~3 이식: DB 출처 관리(개보법 §20 필드·등록 필수·상세/일괄분류) + 수신동의 원클릭 + 수신거부 대장·즉시파기·재등록/재발신 차단 + 통화결과 버튼 개편(가망 팝업·콜백 nextCall/nextCallTime) + 증빙 녹음 로컬 연결. 네이티브 무변경, minNativeCode 44 유지."
 }
