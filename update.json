@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.61",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1061",
+  "webVersion": "1.0.62",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1062",
   "minNativeCode": 44,
-  "note": "web 1.0.61 = 고객 추가 화면의 '수집 출처 — 필수' 제목 옆 회색 부제 안내문(\"내 번호 어떻게 알았냐\"에 답할 근거 · 전원에 적용)을 제거해 화면을 간결하게 정리. 아울러 1.0.60 번들이 자기 버전을 1.0.59로 잘못 보고해 실행마다 재다운로드하던 문제를 버전 정합화로 해결. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
+  "note": "web 1.0.62 = 보안 강화. 앱을 완전히 종료한 뒤 다시 켜면 항상 상담사 로그인을 다시 하도록 변경(자동 로그인 해제). 홈으로 잠깐 나갔다 복귀할 땐 로그인 유지. 아이디는 자동으로 채워지고 비밀번호만 재입력하면 됨. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
 }
