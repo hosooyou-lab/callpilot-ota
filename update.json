@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.60",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1060",
+  "webVersion": "1.0.61",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1061",
   "minNativeCode": 44,
-  "note": "web 1.0.60 = 메모 기록 무결성. (1) 로그인 화면 제목 '직원 로그인' → '상담사 로그인' — 위촉 상담사를 직원으로 지칭하던 표현 정정. (2) 메모 작성 시 [상담사 이름 · 시각]이 자동으로 붙음. (3) 기록 수정창을 덧붙이기 전용으로 변경 — 기존 메모는 읽기 전용, 수정·삭제 불가. (4) 통화기록 메뉴의 '기록 전체 삭제' 버튼 제거, 수신거부는 [차단요청]으로 처리하도록 안내. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
+  "note": "web 1.0.61 = 고객 추가 화면의 '수집 출처 — 필수' 제목 옆 회색 부제 안내문(\"내 번호 어떻게 알았냐\"에 답할 근거 · 전원에 적용)을 제거해 화면을 간결하게 정리. 아울러 1.0.60 번들이 자기 버전을 1.0.59로 잘못 보고해 실행마다 재다운로드하던 문제를 버전 정합화로 해결. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
 }
