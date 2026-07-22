@@ -1,6 +1,6 @@
 {
-  "webVersion": "1.0.62",
-  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1062",
+  "webVersion": "1.0.63",
+  "url": "https://raw.githubusercontent.com/hosooyou-lab/callpilot-ota/main/dist.zip?v=1063",
   "minNativeCode": 44,
-  "note": "web 1.0.62 = 보안 강화. 앱을 완전히 종료한 뒤 다시 켜면 항상 상담사 로그인을 다시 하도록 변경(자동 로그인 해제). 홈으로 잠깐 나갔다 복귀할 땐 로그인 유지. 아이디는 자동으로 채워지고 비밀번호만 재입력하면 됨. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
+  "note": "web 1.0.63 = 로그인 화면 정렬 정리. 로고를 살짝 줄이고(260→212px) 전체 내용을 화면 위쪽으로 올려 세로 균형을 맞춤. 가로 중앙 정렬·입력칸 폭은 그대로. 네이티브 무변경, minNativeCode 44 유지. APK 재설치 불필요."
 }
