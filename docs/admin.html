@@ -15,6 +15,7 @@
   input:focus{ border-color:var(--acc); }
   button{ width:100%; margin-top:12px; padding:14px; font-size:15px; font-weight:800; border:none; border-radius:10px; background:var(--acc); color:#fff; cursor:pointer; }
   button.sec{ background:var(--card); border:1px solid var(--line); color:var(--ink); }
+  button:disabled{ opacity:.45; cursor:default; }
   .msg{ font-size:13px; min-height:18px; margin-top:8px; }
   .card{ background:#0f0d0a; border:1px solid var(--line); border-radius:11px; padding:13px; margin-top:10px; }
   .meta{ font-size:12px; color:#8a8172; }
@@ -24,6 +25,17 @@
   .rej{ flex:0 0 auto; width:auto; padding:13px 18px; background:var(--card); border:1px solid var(--line); }
   .fbmsg{ font-size:14px; color:var(--ink); white-space:pre-wrap; margin-top:6px; }
   hr{ border:none; border-top:1px solid var(--line); margin:24px 0; }
+  /* 🚀 PC 업데이트 발행 */
+  .flist{ font-family:Consolas,monospace; font-size:12px; max-height:200px; overflow:auto; margin-top:8px; line-height:1.7; }
+  .flist .chg{ color:#ffd08a; } .flist .add{ color:#8fe3b0; } .flist .same{ color:#6f675d; }
+  .kvs{ font-size:13px; color:var(--dim); margin-top:6px; line-height:1.7; }
+  .kvs b{ color:var(--ink); }
+  .pubgo{ background:linear-gradient(180deg,#1f9d5b,#178048); }
+  .setrow{ display:flex; gap:8px; align-items:center; }
+  .setrow input{ flex:1; }
+  .setrow button{ flex:0 0 auto; width:auto; margin-top:0; padding:13px 16px; }
+  .oktag{ color:var(--ok); font-weight:700; font-size:12px; }
+  .steplog{ font-family:Consolas,monospace; font-size:12px; color:#bdb4a6; white-space:pre-wrap; margin-top:8px; max-height:180px; overflow:auto; }
 </style>
 </head>
 <body>
@@ -44,6 +56,47 @@
   <button id="loadFb" class="sec">의견 불러오기 / 새로고침</button>
   <div id="fbMsg" class="msg"></div>
   <div id="fbList"></div>
+
+  <hr>
+  <h1 style="font-size:16px">🚀 PC 업데이트 발행</h1>
+  <p class="sub">이 PC의 콜파일럿 소스(src 폴더)를 그대로 발행하면, 전 PC가 자동으로 받아 적용합니다.<br>
+  ① src 폴더 선택 → 바뀐 파일 자동 확인 → ② 발행 버튼. (첫 사용 때만 아래 토큰·서명키 등록)</p>
+
+  <div class="card" id="pubCurrent"><div class="meta">현재 발행 상태 확인 중…</div></div>
+
+  <button id="pickSrc" class="sec">① src 폴더 선택 — 바뀐 파일 확인</button>
+  <input type="file" id="pickFallback" webkitdirectory multiple style="display:none">
+  <div id="scanMsg" class="msg"></div>
+  <div id="diffBox" style="display:none" class="card">
+    <div class="kvs" id="diffSummary"></div>
+    <div class="flist" id="diffList"></div>
+    <label>변경 내용 메모 (상담사 안내창에 그대로 보여요)</label>
+    <input id="pubNotes" placeholder="예: 새 스크립트 취소하면 빈 화면 나오던 문제 수정">
+    <button id="pubGo" class="pubgo" disabled>🚀 ② 업데이트 발행</button>
+    <div id="pubMsg" class="msg"></div>
+    <div id="stepLog" class="steplog"></div>
+  </div>
+
+  <details style="margin-top:14px">
+    <summary style="color:var(--dim);font-size:13px;cursor:pointer">⚙ 발행 설정 (첫 사용 때 한 번만)</summary>
+    <div class="card">
+      <label>GitHub 토큰 <span id="patState" class="oktag"></span></label>
+      <div class="setrow"><input id="ghPat" type="password" placeholder="github.com에서 만든 Fine-grained 토큰"><button class="sec" id="savePat">저장</button></div>
+      <div class="meta" style="margin-top:8px">
+        만드는 법: github.com 로그인 → 우상단 프로필 → Settings → 왼쪽 맨 아래 Developer settings →
+        Personal access tokens → Fine-grained tokens → [Generate new token] →
+        Repository access에서 <b>Only select repositories → callpilot-ota</b> 선택 →
+        Permissions에서 <b>Contents: Read and write</b> 하나만 켜기 → 생성된 토큰을 여기 붙여넣기.
+        (이 브라우저에만 저장되고 발행할 때 GitHub에 커밋하는 데만 씁니다)
+      </div>
+      <label>업데이트 서명키 <span id="keyState" class="oktag"></span></label>
+      <div class="setrow"><input id="updKey" type="password" placeholder="다운로드 폴더의 콜파일럿_업데이트서명키 파일 내용 전체 붙여넣기"><button class="sec" id="saveKey">저장</button></div>
+      <div class="meta" style="margin-top:8px">
+        <b>Downloads\콜파일럿_업데이트서명키(비공개-배포금지).json</b> 파일을 메모장으로 열어 전체 복사 → 붙여넣기.
+        앱은 이 키로 서명된 업데이트만 믿고 적용합니다. 파일은 절대 남에게 주거나 저장소에 올리지 마세요.
+      </div>
+    </div>
+  </details>
 
 <script>
 const SUPA_URL='https://sihczrtbjxnrgeneyyhq.supabase.co';
@@ -114,6 +167,235 @@ async function loadFb(){
 }
 document.getElementById('loadReq').onclick=loadReq;
 document.getElementById('loadFb').onclick=loadFb;
+
+/* ============ 🚀 PC 업데이트 발행 ============ */
+/* 흐름: src 폴더 읽기 → 파일별 SHA-256 → 현재 manifest와 비교 → 바뀐 것만
+   GitHub Git Data API로 blob 업로드 → 트리·커밋 한 번에(원자적) → ref 갱신.
+   manifest는 서명키(ECDSA P-256)로 서명 — 앱(updater.js)의 canonicalPayload와 규약 동일. */
+const GH_OWNER='hosooyou-lab', GH_REPO='callpilot-ota', GH_BRANCH='main';
+const GH_API='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO;
+const RAW_BASE='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/pc/';
+const MAX_FILES=300, MAX_TOTAL=25*1024*1024;
+
+const $=id=>document.getElementById(id);
+const lsGet=k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } };
+const lsSet=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
+
+function refreshSetupState(){
+  $('patState').textContent=lsGet('cp_gh_pat')?'등록됨 ✓':'';
+  $('keyState').textContent=lsGet('cp_upd_key')?'등록됨 ✓':'';
+}
+$('savePat').onclick=()=>{ const v=$('ghPat').value.trim(); if(v) lsSet('cp_gh_pat',v); $('ghPat').value=''; refreshSetupState(); };
+$('saveKey').onclick=()=>{
+  const v=$('updKey').value.trim(); $('updKey').value='';
+  if(!v) return;
+  try{ const j=JSON.parse(v); if(!j.privateKeyJwk||j.privateKeyJwk.kty!=='EC') throw 0; lsSet('cp_upd_key',JSON.stringify(j.privateKeyJwk)); }
+  catch(e){ alert('서명키 파일 내용이 아니에요. 콜파일럿_업데이트서명키(…).json 파일 전체를 그대로 붙여넣어주세요.'); }
+  refreshSetupState();
+};
+refreshSetupState();
+
+/* path 규약: src 기준 상대경로, 구분자 '/'. 서명 대상은 updater.js와 동일한 canonical JSON. */
+function canonicalPayload(manifest){
+  const files=(manifest.files||[])
+    .map(f=>({ path:f.path, sha256:f.sha256 }))
+    .sort((a,b)=>(a.path<b.path?-1:a.path>b.path?1:0));
+  return JSON.stringify({ version:manifest.version, files });
+}
+function excluded(rel){
+  const segs=rel.split('/');
+  if(segs.some(s=>s.startsWith('.')||s.startsWith('_')||s==='node_modules')) return true;
+  const base=segs[segs.length-1].toLowerCase();
+  if(/\.bak/.test(base)) return true;
+  if(base==='version.json') return true;
+  if(/\.(log|tmp|zip|dat|pem|lnk|cp-new)$/.test(base)) return true;
+  return false;
+}
+async function sha256Hex(buf){
+  const h=await crypto.subtle.digest('SHA-256', buf);
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function b64OfBuf(buf){
+  return new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(',')[1]); fr.readAsDataURL(new Blob([buf])); });
+}
+
+/* ── 폴더 읽기: ①showDirectoryPicker(핸들 기억) ②webkitdirectory 폴백 ── */
+let dirHandle=null;
+const idb={
+  open:()=>new Promise((res,rej)=>{ const r=indexedDB.open('cp-admin',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }),
+  get:async k=>{ const db=await idb.open(); return new Promise(res=>{ const t=db.transaction('kv').objectStore('kv').get(k); t.onsuccess=()=>res(t.result); t.onerror=()=>res(null); }); },
+  set:async(k,v)=>{ const db=await idb.open(); return new Promise(res=>{ const t=db.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=()=>res(); t.onerror=()=>res(); }); }
+};
+async function readDirHandle(handle,prefix,out){
+  for await (const [name,h] of handle.entries()){
+    const rel=prefix?prefix+'/'+name:name;
+    if(h.kind==='directory'){ if(!excluded(rel+'/x')) await readDirHandle(h,rel,out); }
+    else { if(excluded(rel)) continue; const f=await h.getFile(); out.push({ path:rel, buf:await f.arrayBuffer() }); }
+  }
+}
+async function collectViaPicker(){
+  if(!dirHandle){
+    const saved=await idb.get('srcDir').catch(()=>null);
+    if(saved){ try{ if((await saved.requestPermission({mode:'read'}))==='granted') dirHandle=saved; }catch(e){} }
+  }
+  if(!dirHandle){
+    dirHandle=await window.showDirectoryPicker({ id:'cp-src', mode:'read' });
+    await idb.set('srcDir',dirHandle).catch(()=>{});
+  }
+  const out=[]; await readDirHandle(dirHandle,'',out); return out;
+}
+function collectViaInput(){
+  return new Promise((res,rej)=>{
+    const inp=$('pickFallback');
+    inp.onchange=async()=>{
+      try{
+        const files=[...inp.files]; inp.value='';
+        if(!files.length) return rej(new Error('선택된 파일이 없어요'));
+        const first=(files[0].webkitRelativePath||'').split('/')[0];
+        const out=[];
+        for(const f of files){
+          let rel=f.webkitRelativePath||f.name;
+          if(first && rel.startsWith(first+'/')) rel=rel.slice(first.length+1);
+          if(!rel||excluded(rel)) continue;
+          out.push({ path:rel, buf:await f.arrayBuffer() });
+        }
+        res(out);
+      }catch(e){ rej(e); }
+    };
+    inp.click();
+  });
+}
+
+/* ── 현재 발행 상태 ── */
+let remoteManifest=null;   // null=아직 모름, false=첫 발행 전
+async function loadCurrent(){
+  const box=$('pubCurrent');
+  try{
+    const r=await fetch(RAW_BASE+'manifest.json?t='+Date.now(),{ cache:'no-store' });
+    if(r.status===404){ remoteManifest=false; box.innerHTML='<div class="meta">아직 첫 발행 전이에요. 폴더를 선택하고 발행하면 시작됩니다.</div>'; return; }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    remoteManifest=await r.json();
+    box.innerHTML='<div class="kvs">현재 발행: <b>'+esc(remoteManifest.version)+'</b> · 파일 '+remoteManifest.files.length+'개<br>'
+      +'<span class="meta">'+esc((remoteManifest.publishedAt||'').replace('T',' ').slice(0,16))+(remoteManifest.notes?' · '+esc(remoteManifest.notes):'')+'</span></div>';
+  }catch(e){ box.innerHTML='<div class="meta" style="color:var(--err)">발행 상태 확인 실패: '+esc(e.message)+' (인터넷 확인)</div>'; }
+}
+loadCurrent();
+
+/* ── ① 폴더 선택 → 해시·비교 ── */
+let scanned=null;   // [{path, buf, sha256, size}]
+let diff=null;      // {changed:[], added:[], same:[], removed:[]}
+$('pickSrc').onclick=async()=>{
+  const msg=$('scanMsg');
+  msg.style.color='var(--dim)'; msg.textContent='폴더 읽는 중…';
+  $('diffBox').style.display='none'; $('pubGo').disabled=true; $('stepLog').textContent=''; $('pubMsg').textContent='';
+  try{
+    const files=window.showDirectoryPicker?await collectViaPicker():await collectViaInput();
+    if(!files.some(f=>f.path==='main.js')||!files.some(f=>f.path==='renderer/index.html'))
+      throw new Error('콜파일럿 src 폴더가 아닌 것 같아요. callpilot-pc\\resources\\app\\src 폴더를 선택해주세요.');
+    if(files.length>MAX_FILES) throw new Error('파일이 너무 많아요('+files.length+'개). src 폴더만 선택했는지 확인해주세요.');
+    const total=files.reduce((s,f)=>s+f.buf.byteLength,0);
+    if(total>MAX_TOTAL) throw new Error('용량이 너무 커요('+(total/1048576).toFixed(1)+'MB). src 폴더만 선택했는지 확인해주세요.');
+    msg.textContent='파일 '+files.length+'개 해시 계산 중…';
+    for(const f of files){ f.sha256=await sha256Hex(f.buf); f.size=f.buf.byteLength; }
+    scanned=files;
+    if(remoteManifest===null) await loadCurrent();
+    const remote=new Map(remoteManifest?remoteManifest.files.map(f=>[f.path,f.sha256]):[]);
+    diff={ changed:[], added:[], same:[], removed:[] };
+    for(const f of files){
+      if(!remote.has(f.path)) diff.added.push(f);
+      else if(remote.get(f.path)!==f.sha256) diff.changed.push(f);
+      else diff.same.push(f);
+      remote.delete(f.path);
+    }
+    diff.removed=[...remote.keys()];
+    const n=diff.changed.length+diff.added.length;
+    $('diffSummary').innerHTML='변경 <b>'+diff.changed.length+'</b>개 · 추가 <b>'+diff.added.length+'</b>개 · 그대로 '+diff.same.length+'개'
+      +(diff.removed.length?' · <span class="meta">로컬에 없는 원격 파일 '+diff.removed.length+'개(유지됨)</span>':'')
+      +' — 총 '+(total/1048576).toFixed(2)+'MB';
+    $('diffList').innerHTML=[
+      ...diff.changed.map(f=>'<div class="chg">✏ '+esc(f.path)+'</div>'),
+      ...diff.added.map(f=>'<div class="add">＋ '+esc(f.path)+'</div>'),
+      ...diff.same.slice(0,50).map(f=>'<div class="same">＝ '+esc(f.path)+'</div>'),
+      diff.same.length>50?'<div class="same">… 그대로 '+(diff.same.length-50)+'개 더</div>':''
+    ].join('');
+    $('diffBox').style.display='block';
+    if(n===0){ msg.style.color='var(--ok)'; msg.textContent='바뀐 파일이 없어요 — 지금 발행본이 최신입니다.'; $('pubGo').disabled=true; }
+    else { msg.style.color='var(--ok)'; msg.textContent='바뀐 파일 '+n+'개 — 메모 쓰고 발행 버튼을 누르세요.'; $('pubGo').disabled=false; }
+  }catch(e){
+    if(e&&e.name==='AbortError'){ msg.textContent=''; return; }
+    msg.style.color='var(--err)'; msg.textContent='실패: '+e.message;
+  }
+};
+
+/* ── ② 발행: blob 업로드 → 트리 → 커밋 → ref (원자적 1커밋) ── */
+function ghHeaders(){ return { 'Authorization':'Bearer '+lsGet('cp_gh_pat'), 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' }; }
+async function gh(method,path,body){
+  const r=await fetch(GH_API+path,{ method, headers:ghHeaders(), body:body?JSON.stringify(body):undefined });
+  const t=await r.text(); let d=null; try{ d=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw new Error('GitHub '+r.status+(d&&d.message?' — '+d.message:''));
+  return d;
+}
+function nextVersion(){
+  const today=new Date();
+  const ymd=today.getFullYear()+'.'+String(today.getMonth()+1).padStart(2,'0')+'.'+String(today.getDate()).padStart(2,'0');
+  const cur=remoteManifest&&remoteManifest.version||'';
+  const m=cur.match(/^v(\d{4}\.\d{2}\.\d{2})-(\d+)$/);
+  if(m&&m[1]===ymd) return 'v'+ymd+'-'+(Number(m[2])+1);
+  return 'v'+ymd+'-1';
+}
+async function signManifest(m){
+  const jwkStr=lsGet('cp_upd_key');
+  const key=await crypto.subtle.importKey('jwk',JSON.parse(jwkStr),{ name:'ECDSA', namedCurve:'P-256' },false,['sign']);
+  const sig=await crypto.subtle.sign({ name:'ECDSA', hash:'SHA-256' },key,new TextEncoder().encode(canonicalPayload(m)));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+$('pubGo').onclick=async()=>{
+  const msg=$('pubMsg'), logEl=$('stepLog');
+  const log=s=>{ logEl.textContent+=s+'\n'; logEl.scrollTop=logEl.scrollHeight; };
+  if(!lsGet('cp_gh_pat')||!lsGet('cp_upd_key')){
+    msg.style.color='var(--err)'; msg.textContent='아래 [발행 설정]에서 GitHub 토큰과 서명키를 먼저 등록해주세요(첫 1회).'; return;
+  }
+  if(!scanned||!diff) return;
+  const uploads=[...diff.changed,...diff.added];
+  if(!uploads.length) return;
+  $('pubGo').disabled=true; msg.style.color='var(--dim)'; msg.textContent='발행 중… 창을 닫지 마세요.'; logEl.textContent='';
+  try{
+    const version=nextVersion();
+    const manifest={
+      version, notes:($('pubNotes').value||'').trim(), publishedAt:new Date().toISOString(),
+      files:scanned.map(f=>({ path:f.path, sha256:f.sha256, size:f.size })).sort((a,b)=>(a.path<b.path?-1:a.path>b.path?1:0))
+    };
+    log('서명 생성…'); manifest.sig=await signManifest(manifest);
+    log('저장소 상태 읽기…');
+    const ref=await gh('GET','/git/ref/heads/'+GH_BRANCH);
+    const head=ref.object.sha;
+    const headCommit=await gh('GET','/git/commits/'+head);
+    const tree=[];
+    for(let i=0;i<uploads.length;i++){
+      const f=uploads[i];
+      log('파일 올리기 ('+(i+1)+'/'+uploads.length+') '+f.path);
+      const blob=await gh('POST','/git/blobs',{ content:await b64OfBuf(f.buf), encoding:'base64' });
+      tree.push({ path:'pc/src/'+f.path, mode:'100644', type:'blob', sha:blob.sha });
+    }
+    const manifestJson=JSON.stringify(manifest,null,1);
+    log('발행 정보 기록…');
+    const mBlob=await gh('POST','/git/blobs',{ content:await b64OfBuf(new TextEncoder().encode(manifestJson).buffer), encoding:'base64' });
+    tree.push({ path:'pc/manifest.json', mode:'100644', type:'blob', sha:mBlob.sha });
+    tree.push({ path:'pc/history/'+version+'.json', mode:'100644', type:'blob', sha:mBlob.sha });
+    const newTree=await gh('POST','/git/trees',{ base_tree:headCommit.tree.sha, tree });
+    const commit=await gh('POST','/git/commits',{ message:'pc '+version+(manifest.notes?': '+manifest.notes:''), tree:newTree.sha, parents:[head] });
+    await gh('PATCH','/git/refs/heads/'+GH_BRANCH,{ sha:commit.sha, force:false });
+    log('완료 — 커밋 '+commit.sha.slice(0,10));
+    remoteManifest=manifest;
+    msg.style.color='var(--ok)';
+    msg.textContent='✅ '+version+' 발행 완료! 각 PC는 앱을 켤 때(또는 켜둔 상태면 3시간 안에) 자동으로 받아요.';
+    loadCurrent();
+  }catch(e){
+    msg.style.color='var(--err)';
+    msg.textContent='발행 실패: '+e.message+(String(e.message).includes('401')?' — GitHub 토큰을 확인해주세요.':'');
+    $('pubGo').disabled=false;
+  }
+};
 </script>
 </body>
 </html>
