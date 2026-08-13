@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>콜파일럿 로그인</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #161310; color: #f0ece6;
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+  }
+  .card { width: 100%; max-width: 380px; text-align: center; }
+  /* 로고: 투명 PNG를 마스크로 써서 시그니처 테라코타 한 색으로 채움 (전화기 이모지 대체) */
+  .logo-mask { width: 230px; height: 66px; max-width: 100%; margin: 0 auto 10px;
+    background-color: #c96442;
+    -webkit-mask: url(../assets/callpilot-logo.png) center / contain no-repeat;
+            mask: url(../assets/callpilot-logo.png) center / contain no-repeat; }
+  .logo-fallback { font-size: 26px; font-weight: 800; color: #c96442; letter-spacing: -.5px; }
+  h1 { font-size: 17px; font-weight: 800; margin: 6px 0 4px; }
+  p.sub { font-size: 12.5px; color: #a29a8f; margin: 0 0 16px; line-height: 1.6; }
+  .notice { font-size: 12px; color: #ffd9a8; background: #2b2418; border: 1px solid #4a453f;
+    border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; display: none; text-align: left; line-height: 1.5; }
+  .field { text-align: left; margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: #8a8172; font-weight: 700; margin-bottom: 5px; }
+  input[type="text"], input[type="password"] { width: 100%; padding: 11px 13px; font-size: 14px;
+    border-radius: 9px; border: 1px solid #4a453f; background: #0f0d0a; color: #fff; outline: none;
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; }
+  input:focus { border-color: #c96442; }
+  .remember-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #a29a8f;
+    margin: 2px 0 6px; cursor: pointer; user-select: none; }
+  .remember-row input { width: auto; margin: 0; accent-color: #c96442; cursor: pointer; }
+  .err { color: #e8776b; font-size: 12.5px; min-height: 16px; margin: 4px 0 6px; text-align: left; }
+  .btns { display: flex; gap: 8px; margin-top: 8px; }
+  button.act { flex: 1; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 9px; cursor: pointer;
+    border: 1px solid #4a453f; background: #2b2824; color: #ddd; }
+  button.go { background: linear-gradient(180deg, #c96442, #a84a2f); border: none; color: #fff; flex: 1.6; }
+  button.go:hover { filter: brightness(1.08); }
+  button.go:disabled { opacity: .6; cursor: default; }
+  .hint { margin-top: 16px; font-size: 11px; color: #6f675d; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-mask" role="img" aria-label="CallPilot"></div>
+    <span class="logo-fallback" id="logoFallback" style="display:none">CallPilot</span>
+    <h1>콜파일럿 로그인</h1>
+    <p class="sub">상담사 아이디와 비밀번호로 로그인하세요.</p>
+    <div class="notice" id="notice"></div>
+    <div class="field">
+      <label for="loginId">아이디 (또는 이메일)</label>
+      <input id="loginId" type="text" placeholder="아이디 또는 이메일 입력" autocomplete="username" autofocus>
+    </div>
+    <div class="field">
+      <label for="password">비밀번호</label>
+      <input id="password" type="password" placeholder="비밀번호 입력" autocomplete="current-password">
+    </div>
+    <label class="remember-row" for="remember">
+      <input type="checkbox" id="remember" checked> 아이디 저장
+    </label>
+    <div class="err" id="err"></div>
+    <div class="btns">
+      <button class="act" id="quit">종료</button>
+      <button class="act go" id="go">로그인</button>
+    </div>
+    <div class="hint">계정이 없거나 로그인에 문제가 있으면 관리자에게 문의하세요.</div>
+  </div>
+<script>
+  const idEl = document.getElementById('loginId');
+  const pwEl = document.getElementById('password');
+  const errEl = document.getElementById('err');
+  const noticeEl = document.getElementById('notice');
+  const goBtn = document.getElementById('go');
+  const quitBtn = document.getElementById('quit');
+  const rememberEl = document.getElementById('remember');
+
+  function showNotice(msg) {
+    if (!msg || !noticeEl) return;
+    noticeEl.textContent = msg;
+    noticeEl.style.display = 'block';
+  }
+  try { if (window.crmAuth && window.crmAuth.onNotice) window.crmAuth.onNotice(showNotice); } catch (e) {}
+  // 저장된 아이디 미리 채우기 → 비번칸으로 포커스
+  try { if (window.crmAuth && window.crmAuth.onPrefill) window.crmAuth.onPrefill(id => { if (id) { idEl.value = id; setTimeout(() => pwEl.focus(), 30); } }); } catch (e) {}
+
+  async function submit() {
+    const loginId = (idEl.value || '').trim();
+    const password = pwEl.value || '';
+    if (!loginId) { errEl.textContent = '아이디를 입력하세요'; idEl.focus(); return; }
+    if (!password) { errEl.textContent = '비밀번호를 입력하세요'; pwEl.focus(); return; }
+    goBtn.disabled = true; errEl.style.color = '#a29a8f'; errEl.textContent = '확인 중…';
+    try {
+      const r = await window.crmAuth.login(loginId, password, rememberEl ? rememberEl.checked : true);
+      if (r && r.ok) { errEl.style.color = '#5a9d6b'; errEl.textContent = '✓ 로그인 성공'; return; }
+      errEl.style.color = '#e8776b'; errEl.textContent = (r && r.message) || '로그인할 수 없습니다.';
+    } catch (e) {
+      errEl.style.color = '#e8776b'; errEl.textContent = '로그인 처리 중 오류가 발생했습니다.';
+    }
+    goBtn.disabled = false; pwEl.select();
+  }
+  goBtn.onclick = submit;
+  quitBtn.onclick = () => { try { window.crmAuth.quit(); } catch (e) {} };
+  idEl.addEventListener('keydown', e => { if (e.key === 'Enter') pwEl.focus(); });
+  pwEl.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+{
+  "version": "v2026.08.13-1",
+  "notes": "",
+  "publishedAt": "2026-08-13T09:43:11.114Z",
+  "files": [
+    {
+      "path": "assets/callpilot-logo.png",
+      "sha256": "51391026e879237be92caf3ed16d1632e1a01849d49af98c52046aab4b4da699",
+      "size": 2010294
+    },
+    {
+      "path": "assets/callpilot.ico",
+      "sha256": "55b3e63497664a75869ad6d65530f2fa861c9d89dfdb023107f9fb8c9e003b16",
+      "size": 66410
+    },
+    {
+      "path": "assets/callpilot.png",
+      "sha256": "ef7fd86e8cf189fa148e69d88c88256800f0229008f3cde7419cb24d14ee2513",
+      "size": 35547
+    },
+    {
+      "path": "dialer/adb.js",
+      "sha256": "383b9a1b5403436bd19a29a5541027277dc6f63765a0682750174bdc54cf4dde",
+      "size": 28470
+    },
+    {
+      "path": "dialer/dialer-main.js",
+      "sha256": "a447f8b73a6c05b446a1868b8e56e6f5b9fd4490749c4fd0a242000c5205e5d7",
+      "size": 16578
+    },
+    {
+      "path": "main.js",
+      "sha256": "84831811c16c47b711e8bba73f06f216831fc9e00648482daa46fa1cd9543a16",
+      "size": 69906
+    },
+    {
+      "path": "preload-activation.js",
+      "sha256": "bf319e5958b2988faa8cf1308c93d19b7aab2d53a94ea0513cb8fdabc1c2b7de",
+      "size": 435
+    },
+    {
+      "path": "preload-crm-login.js",
+      "sha256": "fe67bc5c592ddf6bad78659904d803488189a050f11e371cfb101fcc61a2fb50",
+      "size": 421
+    },
+    {
+      "path": "preload.js",
+      "sha256": "8bb7cfec70e668eddb1d687df11f10283640c287e4af34adf707cfd8548d229b",
+      "size": 4225
+    },
+    {
+      "path": "renderer/activation.html",
+      "sha256": "445e44b8c70c3e9fab13e5122f6fdfaea4553976bd7267314727b6aae6f2f4b5",
+      "size": 7753
+    },
+    {
+      "path": "renderer/crm-login.html",
+      "sha256": "d3ccdbe8841927227d2347d95cb510a780ecd4a678a32dd7e122393442fae37c",
+      "size": 5931
+    },
+    {
+      "path": "renderer/crm.js",
+      "sha256": "f957ae368392ee955fd2cecf9ee9e3cd2361a0f824628ad6bd937f32f7eb5e4b",
+      "size": 53747
+    },
+    {
+      "path": "renderer/defaultCards.js",
+      "sha256": "f21f6cb9ec38920ec0a27cf8183ef54a0a546ac3d683da94ee9f51cd3743a503",
+      "size": 2188
+    },
+    {
+      "path": "renderer/dialer.css",
+      "sha256": "93c730aca474a0c9510a913173c00ea24350b03615dfa70dcf11cae17dd1830a",
+      "size": 61336
+    },
+    {
+      "path": "renderer/dialer.renderer.js",
+      "sha256": "85d1c63191b24d5afc5dd4f1fe1e8060f9638d475aadb591d65d198a85c80d1f",
+      "size": 221958
+    },
+    {
+      "path": "renderer/education.html",
+      "sha256": "c900063d55ce5a7fa2c1852f965fede6a749520439de5c67d53776dd09c4ae6e",
+      "size": 52258
+    },
+    {
+      "path": "renderer/index.html",
+      "sha256": "07aa9d33495e6c8a8fde6b3fb53724181d43567e7a6ae56ecb9be4d0d9fa54ca",
+      "size": 14974
+    },
+    {
+      "path": "renderer/layout.js",
+      "sha256": "674424071fbe7f606a3f00678fc43f8bf34d7cf116ac9eb02684cd7524cb04f2",
+      "size": 23502
+    },
+    {
+      "path": "renderer/renderer.js",
+      "sha256": "ba15262642ba08ae9e59ddf558f822c5a8e1b09b7a16fd65def33cf4438567b0",
+      "size": 187501
+    },
+    {
+      "path": "renderer/styles.css",
+      "sha256": "96368cce2220ebd257d29649dd00b24b6f2a6b0ea6007756e5982f78dd13cf16",
+      "size": 79260
+    },
+    {
+      "path": "renderer/tmcrm.bridge.js",
+      "sha256": "8960eb7e145461e38e452dccabf994b67fc7b4cf5d1df455539b43ab76d53c03",
+      "size": 23953
+    },
+    {
+      "path": "renderer/tmcrm.html",
+      "sha256": "aeb6b179ff9e726056410d34f0448dcdac4e56a2dbc108d3c860464e90db300e",
+      "size": 215920
+    },
+    {
+      "path": "renderer/tutorial.js",
+      "sha256": "93eb634427bf809d9f9468c026ecb9556579a6023f18ef1504f633b566f43eb2",
+      "size": 15443
+    },
+    {
+      "path": "renderer/xlsx.full.min.js",
+      "sha256": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99",
+      "size": 881727
+    },
+    {
+      "path": "sync-server.js",
+      "sha256": "6f675b64e1306e297cd88501a98b5015deaf7221ddee8508d2c3f6ba04fdb2e6",
+      "size": 16323
+    },
+    {
+      "path": "updater.js",
+      "sha256": "5995fc571d150ebeda263d7898faa455b379be68936e644a9067428a65524219",
+      "size": 13282
+    }
+  ],
+  "sig": "jTmE1zmcEzul00PhX0ZKraaHiqjR2YcM7za+6P1gEUQziMyU7YvNM/0EtspnduzIUhVjwL/8jp6b44hiiab7Pw=="
+}

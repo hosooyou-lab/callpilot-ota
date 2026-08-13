@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:; frame-src 'self' file:; child-src 'self' file:;">
+  <title>콜파일럿 (CallPilot)</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="dialer.css">
+</head>
+<body>
+
+<!-- 좌: 사이드바 -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">📋</div>
+    <div class="brand-text">
+      <div class="brand-title">콜 스크립트</div>
+      <div class="brand-sub">연계 메모장</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section pinned-section">
+    <div class="sidebar-section-title">📌 단지 정보</div>
+    <div id="pinned-cards"></div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">카테고리</div>
+    <button class="filter-btn active" data-category="all"><span class="cat-dot cat-all"></span>전체</button>
+    <button class="filter-btn" data-category="opening"><span class="cat-dot cat-opening"></span>오프닝</button>
+    <button class="filter-btn" data-category="objection"><span class="cat-dot cat-objection"></span>반론처리</button>
+    <button class="filter-btn" data-category="closing"><span class="cat-dot cat-closing"></span>클로징</button>
+    <button class="filter-btn" data-category="info"><span class="cat-dot cat-info"></span>정보·세금</button>
+    <div id="custom-cat-filters"></div>
+  </div>
+
+
+  <div class="sidebar-footer">
+    <button class="btn-settings" id="open-font-settings-btn">⚙ 글씨 설정</button>
+    <button class="ghost-btn" id="import-btn">↑ 백업 복원</button>
+    <button class="ghost-btn" id="open-feedback-btn">✍ 의견 보내기</button>
+  </div>
+</aside>
+
+<!-- 중: 멘트 표시 영역 -->
+<main class="memo-area">
+  <div class="memo-empty" id="memo-empty">
+    <div class="memo-empty-icon">💬</div>
+    <div class="memo-empty-title">오른쪽에서 카드를 선택하세요</div>
+    <div class="memo-empty-sub">선택한 카드의 멘트가 여기에 크게 표시됩니다.<br>고객이 갑자기 다른 얘기를 꺼내면 오른쪽 카드를 누르면 즉시 전환돼요.</div>
+    <button class="empty-new-btn" id="empty-new-script-btn">＋ 새 스크립트 만들기</button>
+  </div>
+
+  <div class="memo-view" id="memo-view" style="display:none;">
+    <div class="memo-header">
+      <div class="memo-nav">
+        <button class="nav-btn" id="back-btn" title="뒤로 (마우스 옆버튼 / Alt+←)" disabled>←</button>
+        <button class="nav-btn" id="forward-btn" title="앞으로 (Alt+→)" disabled>→</button>
+      </div>
+      <div class="memo-title-wrap">
+        <span class="memo-cat-badge" id="memo-cat-badge"></span>
+        <h2 id="memo-title"></h2>
+      </div>
+      <div class="memo-actions">
+        <button class="memo-action add-new" id="new-script-btn" title="새 스크립트(카드) 추가 — 이 화면에서 바로">＋ 새 스크립트</button>
+        <button class="memo-action" id="card-list-btn" title="저장된 스크립트 카드 전체 목록 보기 (카테고리별)">📑 목록</button>
+        <button class="memo-action" id="copy-btn" title="복사">⧉</button>
+        <button class="memo-action" id="edit-btn" title="편집">✎</button>
+        <button class="memo-action danger" id="delete-btn" title="삭제">🗑</button>
+        <button class="memo-action" id="memo-more-btn" title="더보기">⋯</button>
+      </div>
+    </div>
+
+    <div class="memo-content" id="memo-content"></div>
+
+    <div class="memo-edit" id="memo-edit" style="display:none;">
+      <div class="edit-row"><label>제목</label><input type="text" id="edit-title"></div>
+      <div class="edit-row"><label>카테고리</label>
+        <select id="edit-category">
+          <option value="opening">오프닝</option>
+          <option value="objection">반론처리</option>
+          <option value="closing">클로징</option>
+          <option value="info">정보·세금</option>
+        </select>
+        <div id="new-cat-row" class="new-cat-row" style="display:none;">
+          <input type="text" id="new-cat-name" placeholder="새 카테고리 이름" maxlength="12" autocomplete="off">
+          <div id="new-cat-colors" class="new-cat-colors"></div>
+          <button type="button" id="new-cat-add" class="new-cat-btn add">추가</button>
+          <button type="button" id="new-cat-cancel" class="new-cat-btn">취소</button>
+        </div>
+      </div>
+      <div class="edit-row"><label>검색 키워드 (쉼표로 구분)</label>
+        <input type="text" id="edit-tags" placeholder="예: 대출, 돈, 자금"></div>
+      <div class="edit-row full"><label>멘트 내용</label><textarea id="edit-content"></textarea></div>
+
+      <div class="edit-controls">
+        <button class="btn-secondary" id="cancel-edit-btn">취소</button>
+        <button class="btn-primary" id="save-edit-btn">저장 (Ctrl+S)</button>
+      </div>
+    </div>
+
+    <!-- 본문 ↔ 하단 그리드 분할 핸들 (드래그로 비율 조정) -->
+    <div class="memo-splitter" id="memo-splitter" title="드래그해서 크기 조정"></div>
+
+    <!-- 중앙 하단: 빠른대응 + 메모장 2열 분할 (50:50) -->
+    <div class="memo-bottom-grid" id="memo-bottom-grid">
+      <!-- 좌: 빠른 대응 키워드 패널 -->
+      <div class="quick-keywords" id="quick-keywords">
+        <div class="qk-header">
+          <span class="qk-title">⚡ 빠른 대응</span>
+          <input type="text" id="qk-filter" class="qk-filter" placeholder="🔎 키워드로 찾기" autocomplete="off">
+          <button class="qk-edit-btn" id="qk-edit-btn" title="키워드 편집">✎</button>
+        </div>
+        <div class="qk-list" id="qk-list"></div>
+        <div class="qk-add-form" id="qk-add-form" style="display:none;">
+          <input type="text" id="qk-add-label" placeholder="버튼에 표시 (예: 비싸요)" maxlength="20">
+          <input type="text" id="qk-add-query" placeholder="검색어 (예: 돈)" maxlength="20">
+          <button class="qk-add-confirm" id="qk-add-confirm" title="추가">＋</button>
+        </div>
+        <div class="qk-preview" id="qk-preview" style="display:none;"></div>
+      </div>
+
+      <!-- 우: 메모장 (카드 검색 패널이 renderer.js에서 메모장으로 변환됨) -->
+      <div class="inline-search-panel" id="inline-search-panel">
+        <div class="isp-header">
+          <span class="isp-title">🔎 카드 검색</span>
+        </div>
+        <div class="isp-input-wrap">
+          <input type="text" id="isp-input" placeholder="키워드 입력…" autocomplete="off" maxlength="40">
+          <button class="isp-clear" id="isp-clear" style="display:none;" title="지우기">×</button>
+        </div>
+        <div class="isp-results" id="isp-results">
+          <div class="isp-empty-hint">키워드를 입력하면<br>카드를 바로 찾아드려요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 우: 카드 그리드 (항상 표시) -->
+<section class="card-panel">
+  <div class="card-panel-header">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search-input" placeholder="키워드 검색  ( /  키)" autocomplete="off">
+      <button class="clear-btn" id="clear-search" style="display:none;">×</button>
+    </div>
+    <button class="btn-add" id="add-card-btn" title="새 카드">＋</button>
+  </div>
+
+  <div class="card-panel-info">
+    <span id="card-count">전체 카드</span>
+  </div>
+
+  <div class="card-list" id="card-list"></div>
+
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <div class="empty-icon">⌕</div>
+    <div>검색 결과 없음</div>
+  </div>
+</section>
+
+<!-- 모달들 -->
+<div class="modal-overlay" id="card-list-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header"><h3>📑 저장된 스크립트 카드</h3>
+      <button class="memo-action close" id="close-card-list-modal" title="닫기 (Esc)">×</button></div>
+    <div class="modal-body">
+      <input type="text" id="card-list-search" class="card-list-search" placeholder="제목·내용·키워드로 찾기…" autocomplete="off">
+      <div id="card-list-body" class="card-list-body"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="json-import-modal" style="display:none;">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3>📥 JSON 가져오기 — 새 카드 붙여넣기</h3>
+      <button class="memo-action close" id="close-json-import-modal">×</button></div>
+    <div class="modal-body">
+      <div class="json-import-help">
+        Claude가 준 JSON 텍스트를 박스에 붙여넣고 <b>적용</b>을 누르세요. 또는 <b>파일 선택</b>으로 .json 파일을 열 수도 있어요.
+      </div>
+      <div class="json-import-mode">
+        <label class="radio-label"><input type="radio" name="import-mode" value="append" checked>
+          <span><b>추가 모드</b> — 새 카드만 더하기 (같은 ID는 덮어쓰기)</span></label>
+        <label class="radio-label"><input type="radio" name="import-mode" value="replace">
+          <span><b>교체 모드</b> — 기존 카드 전부 지우고 새 것으로</span></label>
+      </div>
+      <textarea id="json-import-textarea" placeholder='{"cards":[{"id":"new-card","category":"objection","title":"예시","tags":["예시"],"content":"멘트","next":[]}]}'></textarea>
+      <div class="json-import-controls">
+        <button class="btn-secondary" id="json-pick-file-btn">📁 파일 선택</button>
+        <span class="json-status" id="json-import-status"></span>
+        <button class="btn-primary" id="apply-json-import-btn">적용</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 글씨 설정 모달 -->
+<div class="modal-overlay" id="font-settings-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header"><h3>⚙ 글씨 설정</h3>
+      <button class="memo-action close" id="close-font-settings-modal">×</button></div>
+    <div class="modal-body font-settings-body">
+
+      <div class="fs-group">
+        <div class="fs-row">
+          <span class="fs-row-label">📖 스크립트 본문 크기</span>
+          <span class="fs-row-value" id="fs-memo-val">18px</span>
+        </div>
+        <input type="range" class="fs-slider" id="fs-memo-slider" min="12" max="52" step="1" value="18">
+        <div class="fs-row" style="margin-top:6px;">
+          <span class="fs-row-label">스크립트 본문 굵기</span>
+        </div>
+        <div class="fs-weight-buttons" id="fs-weight-buttons">
+          <button class="fs-weight-btn" data-weight="300">얇음</button>
+          <button class="fs-weight-btn active" data-weight="400">보통</button>
+          <button class="fs-weight-btn" data-weight="500">중간</button>
+          <button class="fs-weight-btn" data-weight="600">굵음</button>
+          <button class="fs-weight-btn" data-weight="700">매우굵음</button>
+        </div>
+      </div>
+
+      <div class="fs-group">
+        <div class="fs-row">
+          <span class="fs-row-label">⚡ 빠른 대응 버튼 크기</span>
+          <span class="fs-row-value" id="fs-qk-val">14px</span>
+        </div>
+        <input type="range" class="fs-slider" id="fs-qk-slider" min="10" max="36" step="0.5" value="14">
+      </div>
+
+      <div class="fs-group">
+        <div class="fs-row">
+          <span class="fs-row-label">📝 메모장 크기</span>
+          <span class="fs-row-value" id="fs-np-val">18px</span>
+        </div>
+        <input type="range" class="fs-slider" id="fs-np-slider" min="10" max="22" step="0.5" value="18">
+      </div>
+
+      <div class="fs-group">
+        <div class="fs-row">
+          <span class="fs-row-label">🗂 콜관리 메모·기록 글씨</span>
+          <span class="fs-row-value" id="fs-crm-val">13px</span>
+        </div>
+        <input type="range" class="fs-slider" id="fs-crm-slider" min="10" max="22" step="0.5" value="13">
+      </div>
+
+      <!-- 🖥 화면 전체를 키우고 줄이는 건 '보기 메뉴 → 확대/축소' 또는 Ctrl + / Ctrl − / Ctrl 0 로 합니다.
+           (모니터가 바뀌어도 배치는 자동으로 화면에 맞춰지고, 확대 배율은 그 위에 유지됩니다)
+           위 슬라이더들은 개별 글씨의 미세조정용입니다. -->
+      <div class="fs-group fs-hint">
+        <span class="fs-hint-text">🖥 <b>화면 전체 크기</b>는 <b>Ctrl&nbsp;+</b> / <b>Ctrl&nbsp;−</b> 로 키우고 줄이세요. (초기화: <b>Ctrl&nbsp;0</b> = 화면에 맞추기)<br>모니터가 바뀌어도 자동으로 맞춰집니다. 위 슬라이더는 개별 글씨 미세조정용입니다.</span>
+      </div>
+
+      <div class="fs-footer">
+        <button class="btn-secondary" id="fs-reset-btn">기본값 복원</button>
+        <button class="btn-primary" id="fs-close-btn">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✍ 의견 보내기 모달 -->
+<div class="modal-overlay" id="feedback-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header"><h3>✍ 의견 보내기</h3>
+      <button class="memo-action close" id="close-feedback-modal">×</button></div>
+    <div class="modal-body">
+      <div class="json-import-help">불편한 점·건의 무엇이든 편하게 적어주세요. 개발자에게 온라인으로 전달됩니다.</div>
+      <textarea id="feedback-textarea" placeholder="예: 이런 기능이 있으면 좋겠어요…" style="width:100%;min-height:120px;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-1);font-size:14px;resize:vertical;"></textarea>
+      <div class="json-import-controls">
+        <span class="json-status" id="feedback-status"></span>
+        <button class="btn-primary" id="send-feedback-btn">보내기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- (제거됨) 그림판 모달 — 어떤 스크립트에서도 열거나 그리는 로직이 연결돼 있지 않아
+     실제로 동작하지 않는 죽은 UI였음. 관련 JS가 전혀 없어 HTML만 제거함. -->
+
+<!-- 🗂 관리(CRM) 진입 — 항상 보이는 떠있는 버튼 (어느 패널 배치에서도 노출) -->
+<button id="crm-open-btn" class="crm-fab" title="콜 관리 — 고객·콜백·캘린더·현황">🗂 콜 관리</button>
+
+<!-- 🗂 관리(CRM) 전체화면 오버레이 -->
+<div id="crm-root" class="crm-root" style="display:none;"></div>
+
+<script src="defaultCards.js"></script>
+<script src="renderer.js"></script>
+<script src="dialer.renderer.js"></script>
+<script src="layout.js"></script>
+<script src="crm.js"></script>
+<script src="tmcrm.bridge.js"></script>
+<script src="tutorial.js"></script>
+</body>
+</html>

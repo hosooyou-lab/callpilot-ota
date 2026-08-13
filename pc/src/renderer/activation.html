@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>콜파일럿 정품 인증</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #161310; color: #f0ece6;
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+  }
+  .card { width: 100%; max-width: 400px; text-align: center; }
+  .logo { font-size: 28px; }
+  h1 { font-size: 17px; font-weight: 800; margin: 6px 0 4px; }
+  p.sub { font-size: 12.5px; color: #a29a8f; margin: 0 0 16px; line-height: 1.6; }
+  .mid-box { background: #0f0d0a; border: 1px solid #4a453f; border-radius: 9px; padding: 10px 12px; margin-bottom: 14px; }
+  .mid-lab { font-size: 11px; color: #8a8172; font-weight: 700; margin-bottom: 5px; text-align: left; }
+  .mid-row { display: flex; gap: 6px; align-items: center; }
+  .mid { flex: 1; font-family: Consolas, monospace; font-size: 13px; color: #ffd9a8; letter-spacing: 1px; word-break: break-all; user-select: all; padding: 4px 0; text-align: left; }
+  .copy { border: 1px solid #4a453f; background: #2b2824; color: #ddd; border-radius: 7px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .copy:hover { border-color: #c96442; }
+  input { width: 100%; padding: 11px 13px; font-size: 14px; text-align: center;
+    border-radius: 9px; border: 1px solid #4a453f; background: #0f0d0a; color: #fff; outline: none; font-family: Consolas, monospace; }
+  input:focus { border-color: #c96442; }
+  .err { color: #e8776b; font-size: 12.5px; height: 16px; margin: 8px 0 0; }
+  .btns { display: flex; gap: 8px; margin-top: 12px; }
+  button.act { flex: 1; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 9px; cursor: pointer; border: 1px solid #4a453f; background: #2b2824; color: #ddd; }
+  button.go { background: linear-gradient(180deg, #c96442, #a84a2f); border: none; color: #fff; flex: 1.4; }
+  button.go:hover { filter: brightness(1.08); }
+  .hint { margin-top: 14px; font-size: 11px; color: #6f675d; line-height: 1.6; }
+  .divider { border: none; border-top: 1px solid #33302b; margin: 16px 0 12px; }
+  .req-sub { font-size: 12px; color: #a29a8f; margin: 0 0 10px; line-height: 1.6; text-align: left; }
+  button.req { width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 9px; cursor: pointer;
+    border: 1px solid #c96442; background: #c96442; color: #fff; }
+  button.req:hover { filter: brightness(1.08); }
+  button.req:disabled { opacity: .6; cursor: default; }
+  .req-status { font-size: 12.5px; color: #a29a8f; margin-top: 8px; min-height: 16px; text-align: left; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🔒</div>
+    <h1>콜파일럿 정품 인증</h1>
+    <p class="sub">이 PC의 <b>기기코드</b>를 관리자에게 보내고,<br>받은 <b>인증키</b>를 아래에 입력하세요.</p>
+    <div class="mid-box">
+      <div class="mid-lab">① 이 기기코드를 관리자에게 전달</div>
+      <div class="mid-row">
+        <div class="mid" id="mid">불러오는 중…</div>
+        <button class="copy" id="copy">복사</button>
+      </div>
+    </div>
+    <input id="key" type="text" placeholder="② 받은 인증키 붙여넣기" autocomplete="off" autofocus>
+    <div class="err" id="err"></div>
+    <div class="btns">
+      <button class="act" id="quit">종료</button>
+      <button class="act go" id="go">활성화</button>
+    </div>
+    <div class="hint">활성화하면 이 PC에서만 실행됩니다. 복사해서 다른 PC로 옮기면 실행되지 않습니다.</div>
+    <hr class="divider">
+    <p class="req-sub">또는 온라인으로 관리자에게 인증 요청 — 승인되면 자동으로 켜집니다.</p>
+    <button class="req" id="reqonline">📨 인증 요청 보내기</button>
+    <div class="req-status" id="reqstatus"></div>
+  </div>
+<script>
+  const midEl = document.getElementById('mid');
+  const keyEl = document.getElementById('key');
+  const errEl = document.getElementById('err');
+  const goBtn = document.getElementById('go');
+  let machineCode = '';
+  (async () => { try { machineCode = await window.lic.machineId(); midEl.textContent = machineCode || '(확인 실패)'; } catch (e) { midEl.textContent = '(확인 실패)'; } })();
+  document.getElementById('copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(machineCode); document.getElementById('copy').textContent = '복사됨'; setTimeout(() => document.getElementById('copy').textContent = '복사', 1200); } catch (e) {}
+  };
+  async function submit() {
+    const v = (keyEl.value || '').trim();
+    if (!v) { errEl.textContent = '인증키를 입력하세요'; keyEl.focus(); return; }
+    goBtn.disabled = true; errEl.style.color = '#a29a8f'; errEl.textContent = '확인 중…';
+    try { const r = await window.lic.activate(v); if (r && r.ok) { errEl.style.color = '#5a9d6b'; errEl.textContent = '✓ 활성화 완료'; return; } } catch (e) {}
+    errEl.style.color = '#e8776b'; errEl.textContent = '인증키가 올바르지 않습니다 (기기코드와 일치하는지 확인)';
+    goBtn.disabled = false; keyEl.select();
+  }
+  goBtn.onclick = submit;
+  document.getElementById('quit').onclick = () => window.lic.quit();
+  keyEl.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+
+  // 📨 온라인 인증 요청 → 5초 간격 승인 폴링(승인되면 activate()가 창 전환까지 처리)
+  const reqBtn = document.getElementById('reqonline');
+  const reqStatus = document.getElementById('reqstatus');
+  const REQ_FLAG = 'cp_pc_actv_requested';
+  let pollTimer = null;
+  function startPolling() {
+    if (reqStatus) { reqStatus.style.color = '#a29a8f'; reqStatus.textContent = '승인 대기 중… 관리자가 승인하면 자동으로 켜집니다.'; }
+    if (pollTimer) return;
+    const tick = async () => {
+      try {
+        if (!window.lic || !window.lic.pollActivation) return;
+        const key = await window.lic.pollActivation();
+        if (key) {
+          const r = await window.lic.activate(key);
+          if (r && r.ok) {
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            try { localStorage.removeItem(REQ_FLAG); } catch (e) {}
+            if (reqStatus) { reqStatus.style.color = '#5a9d6b'; reqStatus.textContent = '✓ 승인되어 활성화되었습니다'; }
+          }
+        }
+      } catch (e) { /* 오프라인 등 — 조용히 다음 폴링에서 재시도 */ }
+    };
+    pollTimer = setInterval(tick, 5000);
+    tick();
+  }
+  if (reqBtn) reqBtn.onclick = async () => {
+    if (!window.lic || !window.lic.requestActivation) { if (reqStatus) { reqStatus.style.color = '#e8776b'; reqStatus.textContent = '온라인 인증 기능을 사용할 수 없습니다'; } return; }
+    reqBtn.disabled = true;
+    if (reqStatus) { reqStatus.style.color = '#a29a8f'; reqStatus.textContent = '요청 보내는 중…'; }
+    try {
+      const r = await window.lic.requestActivation();
+      if (r && r.ok) { try { localStorage.setItem(REQ_FLAG, '1'); } catch (e) {} startPolling(); }
+      else { reqBtn.disabled = false; if (reqStatus) { reqStatus.style.color = '#e8776b'; reqStatus.textContent = '요청 실패 — 인터넷 확인 후 다시'; } }
+    } catch (e) { reqBtn.disabled = false; if (reqStatus) { reqStatus.style.color = '#e8776b'; reqStatus.textContent = '요청 실패 — 인터넷을 확인하세요'; } }
+  };
+  // 페이지 로드 시 이전에 요청했으면 자동으로 폴링 재개
+  try { if (localStorage.getItem(REQ_FLAG) && reqBtn) { reqBtn.disabled = true; startPolling(); } } catch (e) {}
+</script>
+</body>
+</html>

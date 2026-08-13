@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>콜파일럿 — 교육</title>
+<style>
+/* ============================================================
+   education.html — 콜파일럿 「교육」 창 (노션 대체)
+   ------------------------------------------------------------
+   · 노션이 하던 5가지를 그대로 옮김:
+     ①12세션 저장소 ②콜 라이브러리 ③세션 진도 ④주간 지표 ⑤MY DREAM
+   · 권한: crm.me().role
+       master(교육담당) = 전원 조회·편집
+       agent(상담사)    = 본인 진도·지표·MY DREAM만, 세션/라이브러리는 열람
+   · 저장: window.api.store (electron-store) — 이 PC에 저장, main.js 자동백업 대상
+   · 색은 styles.css :root 토큰과 동일값 사용(창이 분리돼 있어 직접 정의)
+   ============================================================ */
+:root{
+  --bg-0:#0f0d0a; --bg-1:#161310; --bg-2:#1e1a16; --bg-3:#2a251f;
+  --bg-hover:#322c25; --border:#3a352f; --border-strong:#4a453f;
+  --text-1:#f0ece6; --text-2:#c9c1b6; --text-3:#a29a8f; --text-4:#6f675d;
+  --accent:#c96442; --accent-dim:#9c4f34; --accent-soft:rgba(201,100,66,.15);
+  --ok:#34b56e; --warn:#e8a84a; --info:#6b93c4; --danger:#e06146;
+  --header-h:48px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg-0);color:var(--text-1);
+     font-family:-apple-system,'Segoe UI','Malgun Gothic','맑은 고딕',sans-serif;
+     font-size:13px;line-height:1.6;overflow:hidden}
+
+/* ── 상단바 ───────────────────────────────────────────── */
+.hdr{height:var(--header-h);background:var(--bg-1);border-bottom:1px solid var(--border);
+     display:flex;align-items:center;gap:12px;padding:0 16px;flex:0 0 auto}
+.hdr .logo{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.hdr .logo span{color:var(--accent)}
+.hdr .spacer{flex:1}
+.who{font-size:12px;color:var(--text-3)}
+.who b{color:var(--text-1)}
+.badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;
+       background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-dim);margin-left:6px}
+.badge.agent{background:rgba(107,147,196,.15);color:var(--info);border-color:#3f5d82}
+
+/* ── 레이아웃 ─────────────────────────────────────────── */
+.wrap{display:flex;height:calc(100% - var(--header-h))}
+.nav{width:190px;flex:0 0 190px;background:var(--bg-1);border-right:1px solid var(--border);
+     padding:10px 8px;overflow-y:auto}
+.nav button{display:block;width:100%;text-align:left;background:transparent;border:0;
+     color:var(--text-2);font-size:13px;padding:9px 11px;border-radius:7px;cursor:pointer;
+     font-family:inherit;margin-bottom:2px}
+.nav button:hover{background:var(--bg-hover);color:var(--text-1)}
+.nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.nav .sep{height:1px;background:var(--border);margin:10px 4px}
+.nav .hint{font-size:11px;color:var(--text-4);padding:6px 11px;line-height:1.5}
+
+.main{flex:1;overflow-y:auto;padding:18px 22px 40px}
+.sec{display:none}
+.sec.on{display:block}
+h1{font-size:18px;margin:0 0 3px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:12px;color:var(--text-3);margin-bottom:16px}
+
+/* ── 공통 부품 ────────────────────────────────────────── */
+.card{background:var(--bg-2);border:1px solid var(--border);border-radius:9px;padding:13px 15px;margin-bottom:10px}
+.card h3{margin:0 0 6px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.code{font-size:11px;font-weight:800;color:var(--accent);background:var(--accent-soft);
+      padding:1px 7px;border-radius:5px;border:1px solid var(--accent-dim)}
+label{display:block;font-size:11px;color:var(--text-3);margin:8px 0 3px;font-weight:600}
+input[type=text],input[type=number],input[type=date],textarea,select{
+  width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:6px;
+  color:var(--text-1);padding:7px 9px;font-size:12.5px;font-family:inherit;line-height:1.5}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent-dim)}
+input:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}
+textarea{resize:vertical;min-height:64px}
+/* 세션 진행메모는 준비물 목록이 기본으로 들어 있어 길다 — 칸 안에서 또 스크롤하지 않도록 넉넉히 */
+textarea[data-sfield="notes"]{min-height:84px}
+
+/* -- 세션 준비물 체크리스트 -------------------------------- */
+.card h3 .sp{flex:1}
+.preph{display:flex;align-items:center;gap:8px;margin:13px 0 5px;
+       font-size:11px;color:var(--text-3);font-weight:600}
+.preph b{font-weight:800;color:var(--warn)}
+.preph b.ok{color:var(--ok)}
+.preph .sp{flex:1}
+ul.prep{list-style:none;margin:0;padding:0;border:1px solid var(--border);
+        border-radius:7px;overflow:hidden}
+ul.prep li{display:flex;align-items:center;gap:8px;padding:7px 11px;
+           border-bottom:1px solid var(--border);background:var(--bg-3)}
+ul.prep li:last-child{border-bottom:0}
+ul.prep li.done{background:rgba(52,181,110,.07)}
+ul.prep li.done .t{color:var(--text-4);text-decoration:line-through}
+ul.prep label{display:flex;align-items:center;gap:10px;margin:0;flex:1;
+              cursor:pointer;font-size:12.5px;color:var(--text-1);font-weight:400}
+ul.prep input[type=checkbox]{width:16px;height:16px;accent-color:#34b56e;
+                             cursor:pointer;flex:0 0 16px;margin:0}
+ul.prep .x{background:transparent;border:0;color:var(--text-4);cursor:pointer;
+           font-size:16px;line-height:1;padding:0 3px;font-family:inherit}
+ul.prep .x:hover{color:var(--danger)}
+.addrow{margin-top:6px}
+.addrow input{font-size:12px;padding:6px 9px}
+.kitrow input{font-size:12px}
+
+/* -- 도움말 -------------------------------------------------- */
+.help h2{font-size:13.5px;font-weight:800;color:var(--accent);margin:22px 0 8px;
+         display:flex;align-items:center;gap:8px}
+.help h2:first-child{margin-top:4px}
+.help p{margin:0 0 8px;color:var(--text-2);font-size:12.7px}
+.help .lead{background:var(--bg-2);border:1px solid var(--border);border-left:3px solid var(--accent);
+            border-radius:0 8px 8px 0;padding:11px 14px;color:var(--text-1);font-size:13px;margin-bottom:6px}
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:hs}
+ol.steps>li{counter-increment:hs;display:flex;gap:11px;padding:9px 0;
+            border-bottom:1px dashed var(--border)}
+ol.steps>li:last-child{border-bottom:0}
+ol.steps>li::before{content:counter(hs);flex:0 0 21px;height:21px;border-radius:50%;
+   background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+   display:flex;align-items:center;justify-content:center;margin-top:1px}
+ol.steps .b{font-size:13px;font-weight:700;color:var(--text-1)}
+ol.steps .m{display:block;font-size:12.2px;color:var(--text-3);margin-top:2px;line-height:1.55}
+.kbd{display:inline-block;background:var(--bg-3);border:1px solid var(--border-strong);
+     border-bottom-width:2px;border-radius:5px;padding:1px 7px;font-size:11.5px;
+     font-weight:700;color:var(--text-1);font-family:inherit}
+.help table{margin:2px 0 6px}
+.help td b{color:var(--text-1)}
+.tipbox{background:rgba(232,168,74,.10);border:1px solid var(--warn);border-radius:8px;
+        padding:10px 13px;font-size:12.4px;color:var(--text-2);margin:8px 0}
+.tipbox b{color:var(--warn)}
+.btn{background:var(--accent);border:0;color:#fff;font-weight:700;font-size:12.5px;
+     padding:8px 15px;border-radius:7px;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--accent-dim)}
+.btn.ghost{background:transparent;border:1px solid var(--border-strong);color:var(--text-2)}
+.btn.ghost:hover{background:var(--bg-hover);color:var(--text-1)}
+.btn.sm{padding:5px 10px;font-size:11.5px}
+.btn.danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn.danger:hover{background:rgba(224,97,70,.12)}
+.row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.row .fix{flex:0 0 auto}
+.muted{color:var(--text-4);font-size:11.5px}
+.empty{color:var(--text-4);font-size:12.5px;padding:26px;text-align:center;
+       border:1px dashed var(--border);border-radius:9px}
+
+/* ── 표 ───────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:middle}
+th{background:var(--bg-3);color:var(--text-2);font-weight:700;font-size:11.5px;white-space:nowrap}
+td.c,th.c{text-align:center}
+.scroll{overflow-x:auto;border-radius:8px}
+td input{padding:4px 6px;font-size:12px}
+
+/* 진도 셀 */
+.pcell{width:30px;height:26px;border-radius:5px;border:1px solid var(--border);
+       background:var(--bg-3);cursor:pointer;color:var(--text-4);font-size:12px;font-weight:700;
+       font-family:inherit;padding:0}
+.pcell.done{background:rgba(52,181,110,.18);border-color:var(--ok);color:var(--ok)}
+.pcell:disabled{cursor:default;opacity:.75}
+
+/* 태그 */
+.tag{display:inline-block;font-size:10.5px;padding:1.5px 7px;border-radius:99px;
+     background:var(--bg-3);color:var(--text-3);border:1px solid var(--border);margin:2px 3px 0 0}
+.toast{position:fixed;right:18px;bottom:18px;background:var(--bg-3);border:1px solid var(--ok);
+       color:var(--text-1);padding:9px 15px;border-radius:8px;font-size:12.5px;opacity:0;
+       transition:opacity .2s;pointer-events:none;z-index:99}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">🎓 <span>교육</span></div>
+  <div class="spacer"></div>
+  <div class="who" id="who">불러오는 중…</div>
+</div>
+
+<div class="wrap">
+  <nav class="nav" id="nav">
+    <button data-sec="help">❓ 도움말 · 처음 오셨나요</button>
+    <div class="sep"></div>
+    <button data-sec="sessions" class="on">📚 12세션 저장소</button>
+    <button data-sec="calllib">🎧 콜 라이브러리</button>
+    <button data-sec="progress">✅ 세션 진도</button>
+    <button data-sec="weekly">📈 주간 지표</button>
+    <button data-sec="dream">🌱 MY DREAM</button>
+    <div class="sep"></div>
+    <button data-sec="people" id="nav-people">👥 교육생 관리</button>
+    <div class="hint" id="navhint"></div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ⓪ 도움말 -->
+    <section class="sec help" id="sec-help">
+      <h1>도움말 — 이 창을 처음 여셨다면</h1>
+      <div class="sub">위에서부터 순서대로 따라 하시면 됩니다. 5분이면 끝납니다.</div>
+
+      <div class="lead">이 창은 <b>신입 교육을 관리하는 곳</b>입니다.
+        세션마다 뭘 준비할지 체크하고, 누가 어디까지 배웠는지 기록하고, 주간 숫자를 남깁니다.
+        예전에 노션으로 하던 일을 여기서 합니다.</div>
+
+      <h2>1단계 · 처음 한 번만 하면 되는 것</h2>
+      <ol class="steps">
+        <li><div><span class="b">교육 권한을 받습니다</span>
+          <span class="m">관리자가 <b>마스터 콘솔 → 상담사 표 → 「교육」 열 → [권한 주기]</b>를 눌러줘야 합니다.
+          권한이 있으면 오른쪽 위에 <b>교육담당</b>이라고 표시됩니다.
+          <b>상담사</b>로 표시되면 읽기만 되고 입력이 안 됩니다.</span></div></li>
+
+        <li><div><span class="b">내가 가르칠 사람을 등록합니다</span>
+          <span class="m">왼쪽 <b>「교육생 관리」</b> → 이름을 넣고 [추가].
+          여기에 넣은 사람이 진도·주간 지표·MY DREAM 화면에 나타납니다.
+          <b>가르치는 사람마다 자기가 맡은 수강생만</b> 넣으면 됩니다.</span></div></li>
+
+        <li><div><span class="b">실행킷 폴더가 맞는지 확인합니다</span>
+          <span class="m"><b>「12세션 저장소」</b> 맨 위 칸입니다.
+          이 폴더를 기준으로 아래 「진행표」·「워크북」 버튼이 파일을 찾습니다.
+          폴더를 옮기셨다면 여기만 고치면 됩니다.</span></div></li>
+      </ol>
+
+      <h2>2단계 · 세션을 진행할 때</h2>
+      <ol class="steps">
+        <li><div><span class="b">세션 전날 — 준비물을 체크합니다</span>
+          <span class="m"><b>「12세션 저장소」</b>에서 해당 세션(S1~S12)을 찾습니다.
+          준비물이 이미 적혀 있으니 챙기면서 하나씩 체크하세요. 위에 <b>3 / 6</b>처럼 몇 개 남았는지 나옵니다.
+          빠진 게 있으면 맨 아래 칸에 적고 <span class="kbd">Enter</span>, 필요 없는 건 오른쪽 <b>×</b>로 지웁니다.</span></div></li>
+
+        <li><div><span class="b">세션 당일 — 「진행표」 버튼을 누릅니다</span>
+          <span class="m">세션 제목 오른쪽의 <b>📄 진행표</b>를 누르면 그 세션의 대본이 열립니다.
+          00:00부터 01:30까지 몇 분에 뭘 하는지 다 적혀 있습니다. <b>📗 워크북</b>은 교육생용입니다.</span></div></li>
+
+        <li><div><span class="b">세션이 끝나면 — 통과 여부를 찍습니다</span>
+          <span class="m">왼쪽 <b>「세션 진도」</b>에서 그 사람 줄의 해당 칸을 누르면 통과(✓)로 바뀝니다.
+          <b>S1과 S4를 둘 다 통과해야 실제 고객 DB를 배정</b>할 수 있고, 그러면 「DB 배정」 칸이 <b>가능</b>으로 바뀝니다.</span></div></li>
+
+        <li><div><span class="b">그날 겪은 걸 남깁니다</span>
+          <span class="m">세션 카드 맨 아래 <b>「진행 메모」</b>에 적습니다.
+          "시간이 10분 모자랐다", "이 예시가 잘 먹혔다" 같은 것들요.
+          다음 기수 때 이 메모가 제일 도움이 됩니다.</span></div></li>
+      </ol>
+
+      <h2>3단계 · 주에 한 번</h2>
+      <ol class="steps">
+        <li><div><span class="b">주간 지표를 채웁니다</span>
+          <span class="m">왼쪽 <b>「주간 지표」</b>에서 주차를 고르고 콜·예약·방문·계약 숫자만 넣습니다.
+          콜→예약, 예약→방문 전환율은 <b>자동으로 계산</b>됩니다.</span></div></li>
+
+        <li><div><span class="b">잘된 콜을 사례로 남깁니다</span>
+          <span class="m">왼쪽 <b>「콜 라이브러리」</b>에 제목·상황·<b>실제로 한 말</b>을 그대로 적습니다.
+          다듬지 말고 말한 그대로 적을수록 나중에 쓸모가 있습니다.</span></div></li>
+      </ol>
+
+      <h2>메뉴가 하는 일</h2>
+      <table>
+        <tr><th style="width:130px">메뉴</th><th>하는 일</th></tr>
+        <tr><td><b>12세션 저장소</b></td><td>세션마다 준비물 체크 · 통과 기준 · 진행 메모. 진행표·워크북 바로 열기</td></tr>
+        <tr><td><b>콜 라이브러리</b></td><td>잘된 콜 사례 모음. 제목·대사·태그로 검색</td></tr>
+        <tr><td><b>세션 진도</b></td><td>누가 S1~S12 중 어디까지 통과했는지. DB 배정 가능 여부 자동 표시</td></tr>
+        <tr><td><b>주간 지표</b></td><td>주차별 콜·예약·방문·계약과 전환율</td></tr>
+        <tr><td><b>MY DREAM</b></td><td>이 일을 하는 이유 3줄. 흔들릴 때 꺼내 보는 용도</td></tr>
+        <tr><td><b>교육생 관리</b></td><td>내가 가르칠 사람 등록·삭제 (교육담당만 보입니다)</td></tr>
+      </table>
+
+      <h2>꼭 알아두실 것</h2>
+      <div class="tipbox"><b>저장 버튼이 없습니다.</b> 입력하는 즉시 저장됩니다.
+        창을 그냥 닫으셔도 되고, 다시 열면 그대로 있습니다.</div>
+      <div class="tipbox"><b>기록은 이 PC에만 저장됩니다.</b> 그래서 가르치는 사람마다 자기 수강생만 보입니다.
+        다른 사람 PC에서는 그 사람이 넣은 것만 보입니다. 아직 PC끼리 합쳐지지는 않습니다.</div>
+      <div class="tipbox"><b>수강생을 삭제하면</b> 그 사람의 진도·지표·MY DREAM도 같이 지워집니다.
+        되돌릴 수 없으니 한 번 더 확인하세요.</div>
+
+      <h2>막히면</h2>
+      <p>이 창은 <span class="kbd">Ctrl</span> + <span class="kbd">3</span> 으로 언제든 다시 열 수 있습니다.
+        교육 일정·서류 규칙은 30일 플랜 폴더의 <b>00_지금상태_한장요약.html</b>과
+        <b>README_먼저읽기.txt</b>에 정리돼 있습니다.</p>
+    </section>
+
+    <!-- ① 12세션 저장소 -->
+    <section class="sec on" id="sec-sessions">
+      <h1>12세션 저장소</h1>
+      <div class="sub">세션마다 목표·통과기준·자료를 한곳에. 교육담당이 채우고 상담사는 열람합니다.</div>
+      <div id="sessionList"></div>
+    </section>
+
+    <!-- ② 콜 라이브러리 -->
+    <section class="sec" id="sec-calllib">
+      <h1>콜 라이브러리</h1>
+      <div class="sub">잘된 콜을 사례로 쌓는 곳. 상황과 실제 대사를 그대로 남깁니다.</div>
+
+      <div class="card" id="libForm">
+        <h3 id="libFormTitle">새 사례 추가</h3>
+        <div class="row">
+          <div><label>제목</label><input type="text" id="libTitle" placeholder="예) 가격 물어보고 끊으려는 고객 붙잡기"></div>
+          <div class="fix" style="flex:0 0 190px"><label>태그(쉼표로 구분)</label><input type="text" id="libTags" placeholder="반론, 가격, 첫15초"></div>
+        </div>
+        <label>어떤 상황이었나</label>
+        <textarea id="libSituation" placeholder="누가·언제·무슨 말 끝에 나온 상황인지 짧게"></textarea>
+        <label>실제로 한 말 (대사 그대로)</label>
+        <textarea id="libScript" placeholder="다듬지 말고 실제 말한 대로 적을수록 쓸모 있습니다"></textarea>
+        <div class="row" style="margin-top:11px">
+          <div class="fix"><button class="btn" id="libSave">저장</button></div>
+          <div class="fix"><button class="btn ghost" id="libCancel" style="display:none">취소</button></div>
+          <div><span class="muted" id="libNote"></span></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin:14px 0 8px">
+        <div><input type="text" id="libSearch" placeholder="🔍 제목·대사·태그로 찾기"></div>
+      </div>
+      <div id="libList"></div>
+    </section>
+
+    <!-- ③ 세션 진도 -->
+    <section class="sec" id="sec-progress">
+      <h1>세션 진도</h1>
+      <div class="sub" id="progSub">S1~S12 통과 여부. 칸을 누르면 통과/미통과가 바뀝니다.</div>
+      <div class="scroll"><table id="progTable"></table></div>
+      <div class="muted" style="margin-top:9px">※ S1·S4를 통과해야 실제 고객 DB 배정이 가능합니다(배정 게이트).</div>
+    </section>
+
+    <!-- ④ 주간 지표 -->
+    <section class="sec" id="sec-weekly">
+      <h1>주간 지표</h1>
+      <div class="sub" id="weekSub">주차별 콜·예약·방문·계약. 숫자만 채우면 됩니다.</div>
+      <div class="row" style="margin-bottom:10px">
+        <div class="fix" style="flex:0 0 150px">
+          <label>주차</label>
+          <select id="weekSel">
+            <option value="w1">1주차</option><option value="w2">2주차</option>
+            <option value="w3">3주차</option><option value="w4">4주차</option>
+          </select>
+        </div>
+      </div>
+      <div class="scroll"><table id="weekTable"></table></div>
+    </section>
+
+    <!-- ⑤ MY DREAM -->
+    <section class="sec" id="sec-dream">
+      <h1>MY DREAM</h1>
+      <div class="sub" id="dreamSub">이 일을 하는 이유 3줄. 흔들릴 때 꺼내 보는 용도입니다.</div>
+      <div id="dreamBody"></div>
+    </section>
+
+    <!-- 교육생 관리 (master 전용) -->
+    <section class="sec" id="sec-people">
+      <h1>교육생 관리</h1>
+      <div class="sub">여기에 등록한 사람이 진도·지표·MY DREAM에 나타납니다.</div>
+      <div class="card">
+        <h3>교육생 추가</h3>
+        <div class="row">
+          <div><label>이름</label><input type="text" id="pName" placeholder="홍길동"></div>
+          <div><label>콜파일럿 로그인 아이디</label><input type="text" id="pLogin" placeholder="본인 화면 연결용(선택)"></div>
+          <div class="fix" style="flex:0 0 150px"><label>입사일</label><input type="date" id="pStart"></div>
+          <div class="fix"><button class="btn" id="pAdd">추가</button></div>
+        </div>
+        <div class="muted" style="margin-top:8px">로그인 아이디를 넣어두면 그 사람이 콜파일럿에서 열었을 때 본인 것만 보입니다.</div>
+      </div>
+      <div id="pList"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+// ============================================================
+//  상태
+// ============================================================
+var ME = { name: '', role: 'agent', login_id: '', edu: false, ok: false };
+var D = {                     // 저장 대상 전체
+  trainees: [],               // [{id,name,loginId,start}]
+  sessions: {},               // {S1:{goal,pass,notes}}
+  calllib: [],                // [{id,title,situation,script,tags:[],by,ts}]
+  progress: {},               // {traineeId:{S1:true,...}}
+  weekly: {},                 // {traineeId:{w1:{call,appt,visit,contract}}}
+  dream: {},                  // {traineeId:{text,updated}}
+  kitPath: ''                 // 실행킷 폴더(진행표·워크북 열기용)
+};
+var KIT_DEFAULT = 'E:\\로엔기획\\로엔_교육실행킷_v1_260718';
+var editingLibId = null;
+
+var SESSION_DEFS = [
+  ["S1","오리엔테이션 · 이 일의 수학 · 법규 기초","90분","출처 고지 문장을 보지 않고 말하기",
+   ["위촉계약서 사본(인원수만큼, F01용)", "정산(돈 계산·지급) 규정 사본", "화이트보드 마커 3색", "타이머(휴대폰 가능)", "워크북 S1분(인원수+1부)", "콜라이브러리 01_관리콜_문○○사모님 재생 준비"],
+   "02_교육자용\\교육자_진행가이드_S1-S4.html","03_교육생용\\교육생_워크북_1주차_S1-S4.html"],
+  ["S2","현장 · 상품 이해","90분","담당 현장 핵심 3가지를 설명하기",
+   ["홈페이지 브리핑 01~07 인쇄본(1인 1부)", "플레이북 §5(자료 연결 표) 발췌본", "화이트보드 마커", "워크북 S2분", "★영상자료 없음 — 화면녹화 또는 라이브 설명으로 대체"],
+   "02_교육자용\\교육자_진행가이드_S1-S4.html","03_교육생용\\교육생_워크북_1주차_S1-S4.html"],
+  ["S3","스크립트 기본기 · 첫 15초","90분","첫 15초를 대본 없이 말하기",
+   ["개인 녹음기 또는 휴대폰 녹음앱(1인 1대)", "플레이북 §1~§3 인쇄본", "콜라이브러리 01번(반면교사)·05번(좋은 오프닝)", "★영상은 큐레이션에서 발췌만(전체 재생 금지)", "워크북 S3분"],
+   "02_교육자용\\교육자_진행가이드_S1-S4.html","03_교육생용\\교육생_워크북_1주차_S1-S4.html"],
+  ["S4","콜 시스템 실습 · 기록 규칙","60분","콜로그 기록 규칙대로 5건 남기기",
+   ["콜파일럿 실습 계정(1인 1개, 사전 발급 확인)", "노트북 또는 모바일 기기(1인 1대)", "플레이북 §6-4(메모 규칙) 인쇄본", "실습용 가상 고객 카드(실제 고객정보 금지)", "워크북 S4분"],
+   "02_교육자용\\교육자_진행가이드_S1-S4.html","03_교육생용\\교육생_워크북_1주차_S1-S4.html"],
+  ["S5","질문 사다리","90분","질문 3단계로 니즈까지 내려가기",
+   ["실전대화집 PART 1(질문 사다리) 인쇄본 — 인원수+2부", "워크북 2주차(S5~S8) 인원수만큼", "콜 라이브러리 07번(이주아_천안) 재생 — 스피커 확인", "화이트보드 마커(검정1+골드1), 타이머", "롤플레이 채점표(F05) 2인당 1부", "무작위 지명용 이름표·제비뽑기 통", "오늘 오전 실콜 로그(F09) 지참 확인"],
+   "02_교육자용\\교육자_진행가이드_S5-S8.html","03_교육생용\\교육생_워크북_2주차_S5-S8.html"],
+  ["S6","반론 대응 Ⅰ","90분","반론 3종에 즉답하기",
+   ["실전대화집 PART 2 ①~⑤ 인쇄본", "반론 포켓카드(F12) 인원수", "콜 라이브러리 01번(비쌈)·05번(반사반응) 재생 준비", "워크북 2주차 인원수, 화이트보드 마커 2색", "롤플레이 채점표(F05) 2인당 1부", "반론 카드 ①~⑤ 뽑기용 낱장", "오늘 오전 실콜 로그(F09) 지참 확인"],
+   "02_교육자용\\교육자_진행가이드_S5-S8.html","03_교육생용\\교육생_워크북_2주차_S5-S8.html"],
+  ["S7","반론 대응 Ⅱ","90분","반론 6종에 즉답하기",
+   ["실전대화집 PART 2 ⑥~⑨ 인쇄본", "고객심리 프로파일 해당 장 발췌 인쇄", "반론 카드 9종 전체(S6분 누적) 뽑기용", "콜 라이브러리 06·07번 재생 준비", "화이트보드 마커 2색, 워크북 2주차", "롤플레이 채점표(F05) 2인당 1부", "오늘 오전 실콜 로그(F09) 지참 확인"],
+   "02_교육자용\\교육자_진행가이드_S5-S8.html","03_교육생용\\교육생_워크북_2주차_S5-S8.html"],
+  ["S8","셰도잉 · 녹취 리뷰 방법","60분","본인 녹취에서 고칠 점 2개 찾기",
+   ["콜 라이브러리 08번(80대 애터미) 재생 준비", "실전대화집 3-3(녹취 자가 점검) 인쇄본", "콜파일럿 로그인 확인(교육생 각자)", "이어폰/헤드셋 인원수", "셰도잉 멘토별 배정표(초안)", "F04 셰도잉 관찰 기록지 인원수, 워크북 2주차", "오늘 오전 실콜 녹음 접근 확인(콜파일럿)"],
+   "02_교육자용\\교육자_진행가이드_S5-S8.html","03_교육생용\\교육생_워크북_2주차_S5-S8.html"],
+  ["S9","통화 목표 재정의 · 다음 접점","90분","통화마다 다음 접점을 남기기",
+   ["콜라이브러리 05_이숙경_남양주 음성 + 스피커", "05번 전사본 인쇄(형광펜 과제용, 인원수)", "형광펜 각자 1개(색볼펜 가능)", "워크북 3-4주차 S9분(인원수+1부)", "★전날 공지 필수 — \"휴대폰 가지고 오세요\"", "화이트보드 마커 2색, 타이머", "F05 채점표, F16 재터치 문자초안(각 인원수)"],
+   "02_교육자용\\교육자_진행가이드_S9-S12.html","03_교육생용\\교육생_워크북_3-4주차_S9-S12.html"],
+  ["S10","예약 화법 · 예약→방문 유지","90분","예약 확정 문장을 그대로 말하기",
+   ["콜라이브러리 09_경험자_인천 음성(15초 발췌)", "콜라이브러리 04_이사모님 음성 + 전사본 인쇄", "F11 예약확정·리마인드 트래커(인원수)", "F05 채점표, 워크북 3-4주차 S10분", "화이트보드 마커, 타이머", "달력 그림(양자택일 연습용)"],
+   "02_교육자용\\교육자_진행가이드_S9-S12.html","03_교육생용\\교육생_워크북_3-4주차_S9-S12.html"],
+  ["S11","회사 문의 응대 표준","60분","문의 응대 표준대로 처리하기",
+   ["타이머(초 단위 — 5분 재는 용도)", "\"지금 문의 접수\" 알림 화면 예시(캡처 인쇄)", "콜라이브러리 06_조용석_김포투자 음성 + 전사본", "F09 일일 콜 로그(인원수)", "워크북 3-4주차 S11분"],
+   "02_교육자용\\교육자_진행가이드_S9-S12.html","03_교육생용\\교육생_워크북_3-4주차_S9-S12.html"],
+  ["S12","졸업 평가 · 수료 확인","90분","F07 졸업 평가 통과",
+   ["F07 졸업평가지, F05 채점표(팀장·멘토 각 1부)", "F17 7·15·30일 면담기록지(인원수)", "오프너 3종 카드, 반론 9종 카드", "팀장·멘토 자리 배치, 타이머", "소액 상품권(즉석 인정용, 있으면)", "3자면담 개별 일정표(당일 오후~익일)"],
+   "02_교육자용\\교육자_진행가이드_S9-S12.html","03_교육생용\\교육생_워크북_3-4주차_S9-S12.html"]
+];
+var WEEK_COLS = [['call','콜'],['appt','예약'],['visit','방문'],['contract','계약']];
+
+// ============================================================
+//  저장 / 불러오기
+// ============================================================
+var store = (window.api && window.api.store) ? window.api.store : null;
+var KEY = 'education';
+
+function load() {
+  return Promise.resolve(store ? store.get(KEY) : null).then(function (v) {
+    if (v && typeof v === 'object') {
+      D.trainees = Array.isArray(v.trainees) ? v.trainees : [];
+      D.sessions = v.sessions && typeof v.sessions === 'object' ? v.sessions : {};
+      D.calllib  = Array.isArray(v.calllib) ? v.calllib : [];
+      D.progress = v.progress && typeof v.progress === 'object' ? v.progress : {};
+      D.weekly   = v.weekly && typeof v.weekly === 'object' ? v.weekly : {};
+      D.dream    = v.dream && typeof v.dream === 'object' ? v.dream : {};
+      D.kitPath  = typeof v.kitPath === 'string' && v.kitPath ? v.kitPath : KIT_DEFAULT;
+    }
+  }).catch(function () {});
+}
+
+var saveTimer = null;
+function save(quiet) {
+  if (!store) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    saveTimer = null;
+    try { store.set(KEY, D); if (!quiet) toast('저장했습니다'); } catch (e) {}
+  }, 250);
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(function () { t.classList.remove('on'); }, 1400);
+}
+
+function uid() {
+  return 'e' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+  });
+}
+
+// ============================================================
+//  권한
+// ============================================================
+// 편집 권한 = CRM 마스터이거나, 마스터 콘솔에서 「교육 탭」 권한을 받은 계정.
+// 가르치는 사람이 여러 명이라, 각자 자기 PC에서 자기 수강생만 등록·관리한다.
+function isMaster() { return ME.role === 'master' || ME.edu === true; }
+
+// 상담사 본인의 교육생 레코드 — 로그인 아이디 우선, 없으면 이름
+function myTrainee() {
+  var i;
+  for (i = 0; i < D.trainees.length; i++) {
+    if (D.trainees[i].loginId && ME.login_id && D.trainees[i].loginId === ME.login_id) return D.trainees[i];
+  }
+  for (i = 0; i < D.trainees.length; i++) {
+    if (D.trainees[i].name && ME.name && D.trainees[i].name === ME.name) return D.trainees[i];
+  }
+  return null;
+}
+
+// 화면에 보여줄 교육생 목록 — master는 전원, agent는 본인만
+function visibleTrainees() {
+  if (isMaster()) return D.trainees;
+  var m = myTrainee();
+  return m ? [m] : [];
+}
+
+// 보여줄 사람이 없을 때의 안내문.
+// ⚠ 저장은 PC별(electron-store)이라 상담사 PC에는 교육담당이 넣은 기록이 없다.
+//   "등록 안 됨"으로 잘못 읽히지 않도록 상담사에게는 이유를 그대로 알려준다.
+function emptyMsg() {
+  if (isMaster()) return '교육생을 먼저 등록해 주세요 (왼쪽 「교육생 관리」).';
+  if (!D.trainees.length) return '교육 기록은 교육담당 PC에서 관리하고 있습니다. PC끼리 연결되면 이 화면이 채워집니다.';
+  return '본인 기록을 찾지 못했습니다. 교육담당에게 이름·로그인 아이디 등록을 요청하세요.';
+}
+
+// ============================================================
+//  (1) 12세션 저장소 - 준비물 체크리스트 + 자료 바로열기
+// ============================================================
+function defOf(code) {
+  var r = null;
+  SESSION_DEFS.forEach(function (d) { if (d[0] === code) r = d; });
+  return r;
+}
+
+// 준비물 항목은 첫 렌더 때 기본 목록에서 복제해 만든다.
+// 한 번 만들어지면 사용자 데이터라, 이후 기본값이 바뀌어도 덮어쓰지 않는다.
+function getItems(code) {
+  var s = D.sessions[code] || (D.sessions[code] = {});
+  if (!Array.isArray(s.items)) {
+    var d = defOf(code);
+    s.items = ((d && d[4]) || []).map(function (t) { return { t: t, done: false }; });
+  }
+  return s.items;
+}
+
+function openSessionFile(code, which) {
+  var d = defOf(code);
+  if (!d) return;
+  var rel = (which === 'g') ? d[5] : d[6];
+  var base = String(D.kitPath || KIT_DEFAULT).replace(/[\\\/]+$/, '');
+  var full = base + '\\' + rel;
+  if (window.api && window.api.dialer && window.api.dialer.openPath) {
+    window.api.dialer.openPath(full);
+    toast('여는 중 - ' + rel.split('\\').pop());
+  } else {
+    toast('이 창에서는 파일을 열 수 없습니다');
+  }
+}
+
+function updatePrepCount(code) {
+  var items = getItems(code);
+  var done = items.filter(function (x) { return x.done; }).length;
+  var el = document.querySelector('[data-prepcount="' + code + '"]');
+  if (!el) return;
+  el.textContent = done + ' / ' + items.length;
+  el.className = (items.length && done === items.length) ? 'ok' : '';
+}
+
+function renderSessions() {
+  var box = document.getElementById('sessionList');
+  var main = document.querySelector('.main');
+  var keep = main ? main.scrollTop : 0;
+  var ro = !isMaster();
+  var html = '';
+
+  html += '<div class="card kitrow">'
+    + '<label>실행킷 폴더 — 아래 「진행표」·「워크북」 버튼이 이 폴더에서 파일을 찾습니다</label>'
+    + '<input type="text" id="kitPath" value="' + esc(D.kitPath || KIT_DEFAULT) + '"' + (ro ? ' disabled' : '') + '>'
+    + '</div>';
+
+  SESSION_DEFS.forEach(function (d) {
+    var code = d[0], s = D.sessions[code] || {};
+    var items = getItems(code);
+    var done = items.filter(function (x) { return x.done; }).length;
+
+    html += '<div class="card">'
+      + '<h3><span class="code">' + code + '</span>' + esc(d[1])
+      + ' <span class="muted">· ' + d[2] + '</span><span class="sp"></span>'
+      + '<button class="btn ghost sm" data-open="g" data-scode="' + code + '">📄 진행표</button>'
+      + '<button class="btn ghost sm" data-open="w" data-scode="' + code + '">📗 워크북</button>'
+      + '</h3>'
+      + '<label>통과 기준</label>'
+      + '<input type="text" data-sfield="pass" data-scode="' + code + '" value="'
+      + esc(s.pass != null ? s.pass : d[3]) + '"' + (ro ? ' disabled' : '') + '>'
+      + '<div class="preph"><span>준비물</span>'
+      + '<b data-prepcount="' + code + '"' + ((items.length && done === items.length) ? ' class="ok"' : '') + '>'
+      + done + ' / ' + items.length + '</b>'
+      + (ro ? '' : '<span class="sp"></span><button class="btn ghost sm" data-prepreset="' + code + '">전체 해제</button>')
+      + '</div><ul class="prep">';
+
+    items.forEach(function (it, i) {
+      html += '<li' + (it.done ? ' class="done"' : '') + '>'
+        + '<label><input type="checkbox" data-pchk="' + code + '" data-pi="' + i + '"'
+        + (it.done ? ' checked' : '') + (ro ? ' disabled' : '') + '>'
+        + '<span class="t">' + esc(it.t) + '</span></label>'
+        + (ro ? '' : '<button class="x" data-pdel="' + code + '" data-pi="' + i + '" title="이 항목 삭제">×</button>')
+        + '</li>';
+    });
+    if (!items.length) html += '<li><span class="muted">준비물이 없습니다</span></li>';
+    html += '</ul>';
+
+    if (!ro) html += '<div class="addrow"><input type="text" data-padd="' + code + '" placeholder="준비물 추가하고 Enter"></div>';
+
+    html += '<label>진행 메모</label>'
+      + '<textarea data-sfield="notes" data-scode="' + code + '" placeholder="그날 겪은 것 — 시간 배분, 잘 먹힌 예시, 다음에 고칠 점"'
+      + (ro ? ' disabled' : '') + '>' + esc(s.notes || '') + '</textarea>'
+      + '</div>';
+  });
+
+  box.innerHTML = html;
+  if (main) main.scrollTop = keep;
+
+  box.querySelectorAll('[data-open]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      openSessionFile(b.getAttribute('data-scode'), b.getAttribute('data-open'));
+    });
+  });
+  if (ro) return;
+
+  var kp = document.getElementById('kitPath');
+  if (kp) kp.addEventListener('input', function () { D.kitPath = kp.value.trim(); save(true); });
+
+  box.querySelectorAll('[data-scode][data-sfield]').forEach(function (el) {
+    el.addEventListener('input', function () {
+      var c = el.getAttribute('data-scode'), f = el.getAttribute('data-sfield');
+      if (!D.sessions[c]) D.sessions[c] = {};
+      D.sessions[c][f] = el.value;
+      save(true);
+    });
+  });
+
+  box.querySelectorAll('[data-pchk]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      var c = cb.getAttribute('data-pchk'), i = parseInt(cb.getAttribute('data-pi'), 10);
+      var items = getItems(c);
+      if (!items[i]) return;
+      items[i].done = cb.checked;
+      var li = cb.parentNode.parentNode;
+      if (li && li.classList) li.classList.toggle('done', cb.checked);
+      updatePrepCount(c);
+      save(true);
+    });
+  });
+
+  box.querySelectorAll('[data-pdel]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var c = b.getAttribute('data-pdel'), i = parseInt(b.getAttribute('data-pi'), 10);
+      getItems(c).splice(i, 1);
+      save(true); renderSessions();
+    });
+  });
+
+  box.querySelectorAll('[data-prepreset]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var c = b.getAttribute('data-prepreset');
+      getItems(c).forEach(function (x) { x.done = false; });
+      save(true); renderSessions();
+    });
+  });
+
+  box.querySelectorAll('[data-padd]').forEach(function (inp) {
+    inp.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var v = inp.value.trim();
+      if (!v) return;
+      getItems(inp.getAttribute('data-padd')).push({ t: v, done: false });
+      inp.value = '';
+      save(true); renderSessions();
+    });
+  });
+}
+
+// ============================================================
+//  ② 콜 라이브러리
+// ============================================================
+function renderLib() {
+  var q = (document.getElementById('libSearch').value || '').trim().toLowerCase();
+  var box = document.getElementById('libList');
+  var list = D.calllib.slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+  if (q) {
+    list = list.filter(function (it) {
+      var hay = (it.title || '') + ' ' + (it.situation || '') + ' ' + (it.script || '') + ' ' + (it.tags || []).join(' ');
+      return hay.toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">' + (q ? '찾는 사례가 없습니다.' : '아직 사례가 없습니다. 위에서 첫 사례를 추가해 보세요.') + '</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function (it) {
+    html += '<div class="card">'
+      + '<h3>' + esc(it.title || '(제목 없음)') + '</h3>'
+      + (it.situation ? '<div class="muted" style="margin-bottom:6px">' + esc(it.situation) + '</div>' : '')
+      + '<div style="white-space:pre-wrap;font-size:12.5px;color:var(--text-2)">' + esc(it.script || '') + '</div>'
+      + '<div style="margin-top:8px">' + (it.tags || []).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>'
+      + '<div class="row" style="margin-top:9px">'
+      + '<div><span class="muted">' + esc(it.by || '') + (it.ts ? ' · ' + new Date(it.ts).toLocaleDateString('ko-KR') : '') + '</span></div>'
+      + (isMaster()
+          ? '<div class="fix"><button class="btn ghost sm" data-libedit="' + it.id + '">수정</button></div>'
+            + '<div class="fix"><button class="btn danger sm" data-libdel="' + it.id + '">삭제</button></div>'
+          : '')
+      + '</div></div>';
+  });
+  box.innerHTML = html;
+
+  box.querySelectorAll('[data-libedit]').forEach(function (b) {
+    b.addEventListener('click', function () { startLibEdit(b.getAttribute('data-libedit')); });
+  });
+  box.querySelectorAll('[data-libdel]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-libdel');
+      if (!confirm('이 사례를 삭제할까요?')) return;
+      D.calllib = D.calllib.filter(function (x) { return x.id !== id; });
+      save(); renderLib();
+    });
+  });
+}
+
+function startLibEdit(id) {
+  var it = null;
+  D.calllib.forEach(function (x) { if (x.id === id) it = x; });
+  if (!it) return;
+  editingLibId = id;
+  document.getElementById('libFormTitle').textContent = '사례 수정';
+  document.getElementById('libTitle').value = it.title || '';
+  document.getElementById('libTags').value = (it.tags || []).join(', ');
+  document.getElementById('libSituation').value = it.situation || '';
+  document.getElementById('libScript').value = it.script || '';
+  document.getElementById('libCancel').style.display = '';
+  window.scrollTo(0, 0);
+}
+
+function resetLibForm() {
+  editingLibId = null;
+  document.getElementById('libFormTitle').textContent = '새 사례 추가';
+  ['libTitle', 'libTags', 'libSituation', 'libScript'].forEach(function (id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('libCancel').style.display = 'none';
+}
+
+function bindLib() {
+  document.getElementById('libSave').addEventListener('click', function () {
+    var title = document.getElementById('libTitle').value.trim();
+    var script = document.getElementById('libScript').value.trim();
+    if (!title && !script) { toast('제목이나 대사 하나는 채워 주세요'); return; }
+    var tags = document.getElementById('libTags').value.split(',')
+      .map(function (s) { return s.trim(); }).filter(Boolean);
+    if (editingLibId) {
+      D.calllib.forEach(function (x) {
+        if (x.id === editingLibId) {
+          x.title = title; x.script = script; x.tags = tags;
+          x.situation = document.getElementById('libSituation').value.trim();
+        }
+      });
+    } else {
+      D.calllib.push({
+        id: uid(), title: title, script: script, tags: tags,
+        situation: document.getElementById('libSituation').value.trim(),
+        by: ME.name || '', ts: Date.now()
+      });
+    }
+    resetLibForm(); save(); renderLib();
+  });
+  document.getElementById('libCancel').addEventListener('click', function () { resetLibForm(); });
+  document.getElementById('libSearch').addEventListener('input', renderLib);
+}
+
+// ============================================================
+//  ③ 세션 진도
+// ============================================================
+function renderProgress() {
+  var t = document.getElementById('progTable');
+  var people = visibleTrainees();
+  if (!people.length) {
+    t.outerHTML = '<table id="progTable"></table>';
+    document.getElementById('progTable').innerHTML =
+      '<tr><td class="c" style="padding:26px;color:var(--text-4);border:1px dashed var(--border)">'
+      + emptyMsg()
+      + '</td></tr>';
+    return;
+  }
+  var ro = !isMaster();
+  var html = '<tr><th>이름</th>';
+  SESSION_DEFS.forEach(function (d) { html += '<th class="c">' + d[0] + '</th>'; });
+  html += '<th class="c">통과</th><th class="c">DB 배정</th></tr>';
+
+  people.forEach(function (p) {
+    var pr = D.progress[p.id] || {};
+    var done = 0;
+    html += '<tr><td>' + esc(p.name) + '</td>';
+    SESSION_DEFS.forEach(function (d) {
+      var on = !!pr[d[0]];
+      if (on) done++;
+      html += '<td class="c"><button class="pcell' + (on ? ' done' : '') + '"'
+        + ' data-pid="' + p.id + '" data-scode="' + d[0] + '"' + (ro ? ' disabled' : '') + '>'
+        + (on ? '✓' : '') + '</button></td>';
+    });
+    var gate = pr.S1 && pr.S4;
+    html += '<td class="c">' + done + '/12</td>'
+      + '<td class="c" style="color:' + (gate ? 'var(--ok)' : 'var(--text-4)') + ';font-weight:700">'
+      + (gate ? '가능' : '대기') + '</td></tr>';
+  });
+  t.innerHTML = html;
+
+  if (ro) return;
+  t.querySelectorAll('.pcell').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var pid = b.getAttribute('data-pid'), sc = b.getAttribute('data-scode');
+      if (!D.progress[pid]) D.progress[pid] = {};
+      D.progress[pid][sc] = !D.progress[pid][sc];
+      save(true); renderProgress();
+    });
+  });
+}
+
+// ============================================================
+//  ④ 주간 지표
+// ============================================================
+function renderWeekly() {
+  var wk = document.getElementById('weekSel').value;
+  var t = document.getElementById('weekTable');
+  var people = visibleTrainees();
+  if (!people.length) {
+    t.innerHTML = '<tr><td class="c" style="padding:26px;color:var(--text-4);border:1px dashed var(--border)">'
+      + emptyMsg() + '</td></tr>';
+    return;
+  }
+  var html = '<tr><th>이름</th>';
+  WEEK_COLS.forEach(function (c) { html += '<th class="c">' + c[1] + '</th>'; });
+  html += '<th class="c">콜→예약</th><th class="c">예약→방문</th></tr>';
+
+  people.forEach(function (p) {
+    var w = (D.weekly[p.id] && D.weekly[p.id][wk]) || {};
+    html += '<tr><td>' + esc(p.name) + '</td>';
+    WEEK_COLS.forEach(function (c) {
+      html += '<td class="c"><input type="number" min="0" style="width:74px;text-align:center"'
+        + ' data-wid="' + p.id + '" data-wf="' + c[0] + '" value="' + (w[c[0]] != null ? w[c[0]] : '') + '"></td>';
+    });
+    var r1 = (w.call > 0) ? Math.round(w.appt / w.call * 1000) / 10 : null;
+    var r2 = (w.appt > 0) ? Math.round(w.visit / w.appt * 1000) / 10 : null;
+    html += '<td class="c">' + (r1 == null ? '—' : r1 + '%') + '</td>'
+      + '<td class="c">' + (r2 == null ? '—' : r2 + '%') + '</td></tr>';
+  });
+  t.innerHTML = html;
+
+  t.querySelectorAll('[data-wid]').forEach(function (el) {
+    el.addEventListener('change', function () {
+      var pid = el.getAttribute('data-wid'), f = el.getAttribute('data-wf');
+      if (!D.weekly[pid]) D.weekly[pid] = {};
+      if (!D.weekly[pid][wk]) D.weekly[pid][wk] = {};
+      var n = parseInt(el.value, 10);
+      D.weekly[pid][wk][f] = isNaN(n) ? null : n;
+      save(true); renderWeekly();
+    });
+  });
+}
+
+// ============================================================
+//  ⑤ MY DREAM
+// ============================================================
+function renderDream() {
+  var box = document.getElementById('dreamBody');
+  var people = visibleTrainees();
+  if (!people.length) {
+    box.innerHTML = '<div class="empty">' + emptyMsg() + '</div>';
+    return;
+  }
+  var html = '';
+  people.forEach(function (p) {
+    var d = D.dream[p.id] || {};
+    html += '<div class="card"><h3>' + esc(p.name) + '</h3>'
+      + '<textarea data-did="' + p.id + '" placeholder="이 일을 하는 이유 3줄">' + esc(d.text || '') + '</textarea>'
+      + '<div class="muted" style="margin-top:5px">' + (d.updated ? '마지막 수정 ' + new Date(d.updated).toLocaleDateString('ko-KR') : '아직 안 썼습니다') + '</div>'
+      + '</div>';
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('[data-did]').forEach(function (el) {
+    el.addEventListener('input', function () {
+      var pid = el.getAttribute('data-did');
+      D.dream[pid] = { text: el.value, updated: Date.now() };
+      save(true);
+    });
+  });
+}
+
+// ============================================================
+//  교육생 관리 (master 전용)
+// ============================================================
+function renderPeople() {
+  var box = document.getElementById('pList');
+  if (!D.trainees.length) { box.innerHTML = '<div class="empty">등록된 교육생이 없습니다.</div>'; return; }
+  var html = '<div class="scroll"><table><tr><th>이름</th><th>로그인 아이디</th><th>입사일</th><th class="c">삭제</th></tr>';
+  D.trainees.forEach(function (p) {
+    html += '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.loginId || '—') + '</td><td>' + esc(p.start || '—') + '</td>'
+      + '<td class="c"><button class="btn danger sm" data-pdel="' + p.id + '">삭제</button></td></tr>';
+  });
+  box.innerHTML = html + '</table></div>';
+  box.querySelectorAll('[data-pdel]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-pdel');
+      if (!confirm('삭제하면 이 교육생의 진도·지표·MY DREAM도 함께 지워집니다. 진행할까요?')) return;
+      D.trainees = D.trainees.filter(function (x) { return x.id !== id; });
+      delete D.progress[id]; delete D.weekly[id]; delete D.dream[id];
+      save(); renderAll();
+    });
+  });
+}
+
+function bindPeople() {
+  document.getElementById('pAdd').addEventListener('click', function () {
+    var name = document.getElementById('pName').value.trim();
+    if (!name) { toast('이름을 넣어 주세요'); return; }
+    D.trainees.push({
+      id: uid(), name: name,
+      loginId: document.getElementById('pLogin').value.trim(),
+      start: document.getElementById('pStart').value
+    });
+    document.getElementById('pName').value = '';
+    document.getElementById('pLogin').value = '';
+    save(); renderAll();
+  });
+}
+
+// ============================================================
+//  네비게이션 · 초기화
+// ============================================================
+function bindNav() {
+  document.querySelectorAll('.nav button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.nav button').forEach(function (x) { x.classList.remove('on'); });
+      document.querySelectorAll('.sec').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var el = document.getElementById('sec-' + b.getAttribute('data-sec'));
+      if (el) el.classList.add('on');
+    });
+  });
+}
+
+function renderAll() {
+  renderSessions(); renderLib(); renderProgress(); renderWeekly(); renderDream();
+  if (isMaster()) renderPeople();
+}
+
+function applyRole() {
+  var who = document.getElementById('who');
+  who.innerHTML = '<b>' + esc(ME.name || '이름 없음') + '</b>'
+    + '<span class="badge' + (isMaster() ? '' : ' agent') + '">' + (isMaster() ? '교육담당' : '상담사') + '</span>';
+
+  // ⚠ 숨기기만 하고 되돌리지 않으면, 권한이 켜져도 계속 숨은 채로 남는다 — 양쪽을 다 지정한다.
+  document.getElementById('nav-people').style.display = isMaster() ? '' : 'none';
+  document.getElementById('libForm').style.display = isMaster() ? '' : 'none';
+
+  if (!isMaster()) {
+    document.getElementById('navhint').textContent =
+      '상담사 화면입니다. 진도·지표·MY DREAM은 본인 것만 보이고, 세션 자료와 콜 라이브러리는 열람만 됩니다.';
+    document.getElementById('progSub').textContent = '내 S1~S12 통과 현황입니다. 수정은 교육담당이 합니다.';
+    document.getElementById('weekSub').textContent = '내 주차별 콜·예약·방문·계약입니다.';
+    document.getElementById('dreamSub').textContent = '이 일을 하는 이유 3줄. 본인이 직접 씁니다.';
+  } else {
+    document.getElementById('navhint').textContent = '교육담당 화면입니다. 전원 조회·편집할 수 있습니다.';
+  }
+}
+
+(function init() {
+  bindNav(); bindLib(); bindPeople();
+  document.getElementById('weekSel').addEventListener('change', renderWeekly);
+
+  var meP = (window.api && window.api.crm && window.api.crm.me)
+    ? window.api.crm.me() : Promise.resolve(null);
+
+  Promise.resolve(meP).then(function (m) {
+    if (m && m.ok) {
+      ME.name = m.name || ''; ME.role = m.role || 'agent'; ME.login_id = m.login_id || '';
+      ME.edu = m.edu_enabled === true; ME.ok = true;
+    }
+    else { ME.role = 'master'; ME.name = '(로그인 없음)'; }   // 로그인 전이면 편집 가능한 상태로 열어둔다
+  }).catch(function () { ME.role = 'master'; })
+    .then(load)
+    .then(function () {
+      applyRole(); renderAll();
+      // 아직 아무것도 등록되지 않았다면 = 처음 여는 사람 → 도움말을 먼저 보여준다
+      if (!D.trainees.length) {
+        var hb = document.querySelector('.nav button[data-sec="help"]');
+        if (hb) hb.click();
+      }
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TM 고객관리 · 콜파일럿</title>
+<style>
+  :root{
+    --ink:#10233F; --navy:#1B3A5B; --gold:#C39A4E; --gold-soft:#E7D3A8;
+    --cream:#F6F1E7; --paper:#FFFFFF; --line:#E3DAC8; --muted:#6B7280;
+    --g-gamang:#2E7D53; --g-buje:#C77D2E; --g-refuse:#B23A48; --g-visit:#2F6DB0; --g-later:#5B6B7C;
+    --shadow:0 1px 2px rgba(16,35,63,.06),0 6px 20px rgba(16,35,63,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Pretendard","Pretendard Variable",-apple-system,"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    background:var(--cream); color:var(--ink); font-size:14px; -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"SF Mono","JetBrains Mono",Consolas,"D2Coding",monospace;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  button{font-family:inherit;cursor:pointer}
+  /* ---- top bar ---- */
+  header{position:sticky;top:0;z-index:30;background:var(--ink);color:#fff;border-bottom:2px solid var(--gold)}
+  .bar{display:flex;align-items:center;gap:16px;padding:0 16px;height:48px}
+  .brand{display:flex;align-items:baseline;gap:8px;font-weight:800;letter-spacing:.01em}
+  .brand .k{color:var(--text-1);font-size:15px}
+  .brand .s{font-size:12px;color:#B9C4D4;font-weight:600}
+  nav{display:flex;gap:2px;margin-left:6px}
+  nav button{background:transparent;border:0;color:#B9C4D4;font-weight:700;font-size:14px;padding:8px 14px;border-radius:8px 8px 0 0}
+  nav button.on{color:#fff;background:var(--navy);box-shadow:inset 0 -3px 0 var(--gold)}
+  .spacer{flex:1}
+  .tools{display:flex;align-items:center;gap:8px}
+  .tools button{background:var(--navy);border:1px solid #2C4E72;color:#DCE4EF;font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:8px}
+  .tools button:hover{border-color:var(--gold);color:#fff}
+  .tools .btn-assign{background:var(--accent);border-color:var(--accent);color:#1a0f08}
+  .tools .btn-assign:hover{filter:brightness(1.08);border-color:var(--accent);color:#1a0f08}
+  .save-dot{font-size:11.5px;color:#9FB0C6;display:flex;align-items:center;gap:6px}
+  .save-dot i{width:7px;height:7px;border-radius:50%;background:var(--g-gamang);display:inline-block}
+  .save-dot.mem i{background:var(--g-buje)}
+  main{max-width:1400px;margin:0 auto;padding:20px}
+  .view{display:none} .view.on{display:block}
+  /* ---- focus card (signature) ---- */
+  .focus{background:linear-gradient(160deg,var(--navy),var(--ink));color:#fff;border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);position:relative;overflow:hidden;border:1px solid #2C4E72}
+  .focus::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(195,154,78,.18),transparent 70%)}
+  .focus .ey{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--gold);text-transform:uppercase}
+  .focus .who{display:flex;align-items:baseline;gap:14px;margin:6px 0 2px}
+  .focus .who .ph{font-size:30px;font-weight:800}
+  .focus .who .nm{font-size:17px;color:#CBD6E6;font-weight:700}
+  .focus .meta{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px}
+  .focus .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 11px;font-size:12px;color:#E6ECF4;font-weight:600}
+  .focus .memo{margin-top:12px;font-size:13px;color:#D6DFEC;line-height:1.55;max-height:66px;overflow:auto;background:rgba(0,0,0,.15);border-radius:9px;padding:9px 12px}
+  .acts{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+  .acts button,.acts .call{border:0;border-radius:10px;padding:11px 16px;font-weight:800;font-size:14px;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px;line-height:1;font-family:inherit}
+  .acts .call{background:var(--gold);color:#fff}
+  .acts .call:hover{filter:brightness(1.08)}
+  .b-gamang{background:var(--g-gamang)} .b-buje{background:var(--g-buje)} .b-refuse{background:var(--g-refuse)}
+  .b-later{background:var(--g-later)} .b-visit{background:var(--g-visit)}
+  .acts button:hover{filter:brightness(1.08)}
+  .focus.empty{align-items:center;text-align:center;color:#CBD6E6}
+  /* ---- stat strip ---- */
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .stat .lab{font-size:12px;color:var(--muted);font-weight:700}
+  .stat .num{font-size:26px;font-weight:800;margin-top:2px}
+  .stat.red .num{color:var(--g-refuse)} .stat.amber .num{color:var(--g-buje)} .stat.green .num{color:var(--g-gamang)}
+  /* ---- section head ---- */
+  .sec{display:flex;align-items:center;gap:12px;margin:22px 2px 12px}
+  .sec h2{font-size:15px;font-weight:800;margin:0;letter-spacing:-.01em}
+  .sec .rule{flex:1;height:1px;background:var(--line)}
+  .sec .count{font-size:12px;color:var(--muted);font-weight:700}
+  /* ---- toolbar ---- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:11px 13px;box-shadow:var(--shadow)}
+  .toolbar input[type=text]{border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13.5px;font-family:inherit;min-width:200px;color:var(--ink);background:var(--bg-0)}
+  .toolbar select{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:13px;font-family:inherit;background:var(--bg-0);color:var(--ink);font-weight:600}
+  .toolbar .grow{flex:1}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 13px;font-weight:700;font-size:13px;color:var(--ink)}
+  .btn:hover{border-color:var(--gold)}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .btn.danger{background:#fff;border-color:var(--g-refuse);color:var(--g-refuse)}
+  .btn.danger:hover{background:var(--g-refuse);color:#fff}
+  /* ---- table ---- */
+  .tablewrap{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper);box-shadow:var(--shadow)}
+  .scroller{max-height:60vh;overflow:auto}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+  thead th{position:sticky;top:0;z-index:2;background:var(--ink);color:#EAF0F7;font-weight:700;font-size:12px;letter-spacing:.03em;text-align:center;padding:8px 10px;white-space:nowrap;border-bottom:1px solid var(--gold)}
+  tbody td{padding:6px 10px;border-bottom:1px solid #EFE8D8;text-align:center;vertical-align:middle}
+  tbody tr:hover{background:#FBF7EE}
+  tbody tr.is-refuse{background:#FBEEEF}
+  tbody tr.is-refuse:hover{background:#F6E2E4}
+  td.left{text-align:left}
+  /* cell inputs — native controls => paste is always plain text, font/size/align fixed by CSS */
+  .cell{width:100%;border:1px solid transparent;background:transparent;border-radius:6px;padding:5px 7px;font-family:inherit;font-size:13px;color:var(--ink);text-align:center}
+  td.left .cell{text-align:left}
+  .cell:hover{border-color:var(--line)}
+  .cell:focus{outline:none;border-color:var(--gold);background:#FFFDF7;box-shadow:0 0 0 3px rgba(195,154,78,.15)}
+  textarea.cell{resize:vertical;min-height:30px;line-height:1.4;text-align:left}
+  /* 🔒 읽기전용 셀(2026-07-18) — 콜러(계정 자동)·메모(발신 연동 자동 기록, 수정·삭제 불가) */
+  .cell-ro{display:inline-block;width:100%;padding:5px 7px;font-size:13px;color:var(--ink);text-align:left;cursor:default}
+  textarea.cell.memo-ro{cursor:default;color:var(--ink)}
+  textarea.cell.memo-ro:hover{border-color:transparent}
+  textarea.cell.memo-ro:focus{border-color:var(--line);background:transparent;box-shadow:none}
+  select.cell{font-weight:700;-webkit-appearance:none;appearance:none;text-align-last:center;cursor:pointer}
+  .ph-cell{font-family:"SF Mono",Consolas,monospace;font-weight:700;letter-spacing:.02em}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:800;color:#fff}
+  .cb{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800}
+  .cb.past{background:#FBE2E4;color:var(--g-refuse)} .cb.today{background:#FCEFD6;color:var(--g-buje)}
+  .cb.soon{background:#E4F1E9;color:var(--g-gamang)} .cb.new{background:#EEF1F5;color:var(--g-later)}
+  .rowdel{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700}
+  .rowdel:hover{border-color:var(--g-refuse);color:var(--g-refuse)}
+  .callmini{border:1px solid var(--gold);background:#FFF9EE;color:var(--ink);border-radius:6px;padding:4px 8px;font-weight:800;font-size:12px;text-decoration:none}
+  td.ph-cell{white-space:nowrap}
+  .ph-line{display:inline-flex;align-items:center;gap:7px;justify-content:center}
+  .copybtn{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:3px 8px;font-size:11.5px;font-weight:800;line-height:1.4}
+  .copybtn:hover{border-color:var(--gold);color:var(--ink);background:#FFF9EE}
+  .copybtn.copied{border-color:var(--g-gamang);color:#fff;background:var(--g-gamang)}
+  .acts .b-copy{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff}
+  .acts .b-copy:hover{background:rgba(255,255,255,.24)}
+  #addBox{width:100%;height:210px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-family:"SF Mono",Consolas,monospace;font-size:14px;line-height:1.7;color:var(--ink);background:var(--bg-0);resize:vertical}
+  #addBox:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(195,154,78,.15)}
+  .add-foot{display:flex;align-items:center;gap:12px;margin-top:13px}
+  .add-foot .prev{font-size:13px;color:var(--ink)} .add-foot .prev b{color:var(--gold)}
+  /* ---- dashboard ---- */
+  .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card .lab{font-size:12.5px;color:var(--muted);font-weight:700}
+  .card .big{font-size:34px;font-weight:800;margin-top:4px}
+  .barrow{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .barrow .k{width:74px;text-align:right;color:var(--muted);font-weight:700;font-size:12px}
+  .barrow .track{flex:1;height:16px;background:#EFE8D8;border-radius:8px;overflow:hidden}
+  .barrow .fill{height:100%;border-radius:8px}
+  .barrow .v{width:52px;font-weight:800;font-size:12.5px}
+  /* ---- toast / modal ---- */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-weight:700;font-size:13.5px;box-shadow:0 8px 30px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:60;border:1px solid var(--gold);display:flex;align-items:center;gap:12px}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast button{background:var(--gold);color:var(--ink);border:0;border-radius:7px;padding:5px 11px;font-weight:800;font-size:12.5px}
+  .modal{position:fixed;inset:0;background:rgba(16,35,63,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal.on{display:flex}
+  .sheet{background:var(--paper);border-radius:16px;width:min(920px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--line)}
+  .sheet header{position:static;background:var(--ink);border-bottom:2px solid var(--gold)}
+  .sheet .shead{display:flex;align-items:center;padding:14px 18px;color:#fff}
+  .sheet .shead b{font-size:15px} .sheet .shead .spacer{flex:1}
+  .sheet .shead button{background:transparent;border:0;color:#CBD6E6;font-size:20px}
+  .sheet .sbody{padding:6px 0;overflow:auto}
+  .empty-note{padding:40px;text-align:center;color:var(--muted);font-weight:600}
+  @media(max-width:720px){
+    .strip{grid-template-columns:repeat(2,1fr)}
+    .bar{gap:10px;padding:0 12px} .brand .s{display:none}
+    nav button{padding:8px 9px;font-size:13px}
+    .tools .lbl{display:none}
+  }
+  /* ---- 정렬 헤더 · 선택 체크박스 · DB등록일 ---- */
+  thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+  thead th.sortable:hover{color:var(--gold)}
+  thead th.active{color:var(--gold)}
+  .chkcol{width:40px;text-align:center}
+  .rowchk,#chkAll{width:16px;height:16px;cursor:pointer;accent-color:var(--gold)}
+  tbody tr.rowsel{background:#FFF6E4}
+  tbody tr.rowsel:hover{background:#FBEFD3}
+  @keyframes rowFlash{from{background:var(--accent-soft)}to{background:transparent}}
+  tbody tr.row-flash{animation:rowFlash 1.6s ease}
+  /* ---- 대시보드: 퍼널·전환율·목표역산 ---- */
+  .funnel .fn-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .funnel .fn-l{width:92px;font-size:13px;font-weight:800;color:var(--ink)}
+  .funnel .fn-bar{flex:1;height:24px;background:#EFE8D8;border-radius:7px;overflow:hidden}
+  .funnel .fn-fill{height:100%;border-radius:7px;transition:width .3s}
+  .funnel .fn-v{width:132px;text-align:right;font-size:12.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .convrow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:15px}
+  .conv{background:var(--bg-0);border:1px solid var(--line);border-radius:10px;padding:11px 8px;text-align:center}
+  .conv-k{font-size:12px;color:var(--muted);font-weight:700}
+  .conv-v{font-size:21px;font-weight:800;color:var(--ink);margin-top:3px}
+  .conv-s{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:1px}
+  .goal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .goal-in{display:flex;flex-direction:column;gap:5px}
+  .goal-in label{font-size:12px;color:var(--muted);font-weight:700}
+  .goal-in input{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-family:inherit;font-size:14px;font-weight:700;background:var(--bg-0);color:var(--ink)}
+  .goal-in input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(195,154,78,.15)}
+  .goal-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:15px}
+  .goal-o{background:linear-gradient(160deg,var(--navy),var(--ink));color:#fff;border-radius:11px;padding:14px 10px;text-align:center;border:1px solid #2C4E72}
+  .goal-o .n{font-size:23px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+  .goal-o .l{font-size:12px;color:#CBD6E6;font-weight:700;margin-top:3px}
+  .goal-hint{font-size:12px;color:var(--muted);margin:10px 2px 0}
+
+  /* ===== 🌙 콜파일럿 공식 다크 팔레트로 통일 — 아래 규칙이 위 밝은 색을 덮어씀 ===== */
+  :root{
+    --bg-0:#0f0d0a; --bg-1:#161310; --bg-2:#1e1a16; --bg-3:#2a251f;
+    --bg-hover:#322c25; --border:#3a352f; --border-strong:#4a453f;
+    --text-1:#f0ece6; --text-2:#c9c1b6; --text-3:#a29a8f; --text-4:#6f675d;
+    --accent:#c96442; --accent-dim:#9c4f34; --accent-soft:rgba(201,100,66,.15);
+    --ok:#34b56e; --ok-dim:#1f9d5b; --warn:#e8a84a; --danger:#e06146; --info:#6b93c4;
+    /* 기존 변수명 → 공식 팔레트로 매핑 (다른 규칙은 그대로 두고 값만 통일) */
+    --cream:var(--bg-1); --paper:var(--bg-2); --line:var(--border); --muted:var(--text-3);
+    --ink:var(--text-1); --navy:var(--bg-3); --gold:var(--accent); --gold-soft:var(--accent-soft);
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 6px 20px rgba(0,0,0,.35);
+    --g-gamang:var(--ok); --g-buje:var(--warn); --g-refuse:var(--danger); --g-visit:var(--accent); --g-later:var(--info);
+  }
+  body{ background:var(--bg-1); color:var(--text-1); }
+  header{ background:var(--bg-1); border-bottom:1px solid var(--border); }
+  .brand .s{ color:var(--text-3); }
+  nav button{ color:var(--text-3); }
+  nav button.on{ background:var(--bg-3); color:#fff; }
+  .tools button{ background:var(--bg-3); border-color:var(--border-strong); color:var(--text-2); }
+  .save-dot{ color:var(--text-3); }
+  thead th{ background:var(--bg-1); color:var(--text-2); }
+  tbody td{ border-bottom-color:var(--border); }
+  tbody tr:hover{ background:var(--bg-2); }
+  tbody tr.is-refuse{ background:rgba(224,97,70,.12); }
+  tbody tr.is-refuse:hover{ background:rgba(224,97,70,.18); }
+  tbody tr.rowsel{ background:var(--accent-soft); }
+  tbody tr.rowsel:hover{ background:rgba(201,100,66,.22); }
+  .toolbar input[type=text],.toolbar select,#addBox,.goal-in input,#addPrefix,#addSource{ background:var(--bg-0); color:var(--text-1); }
+  /* +고객 등 입력 창의 안내문구(placeholder)가 다크에서 묻히지 않게 */
+  #addModal ::placeholder{ color:var(--text-3); opacity:1; }
+  .cell{ color:var(--text-1); }
+  .cell:focus{ background:var(--bg-0); }
+  /* 🆕 F4) 상담자 미입력 경고 — 방문예약/방문완료/계약협의인데 상담자가 비어있을 때만(강제 아님, 시각적 힌트) */
+  .cell.cell-warn{ background:rgba(232,168,74,.15); border-color:var(--warn); }
+  .btn{ background:var(--bg-3); color:var(--text-1); }
+  .btn.gold{ background:var(--accent); color:#1a0f08; border-color:var(--accent); }
+  .btn.danger{ background:var(--bg-3); }
+  .rowdel,.copybtn{ background:var(--bg-3); color:var(--text-3); }
+  .copybtn:hover,.callmini{ background:var(--accent-soft); color:var(--text-1); }
+  .callmini{ border-color:var(--accent); }
+  .conv{ background:var(--bg-1); }
+  .barrow .track,.funnel .fn-bar{ background:var(--border); }
+  .focus{ background:linear-gradient(160deg,var(--bg-3),var(--bg-1)); border-color:var(--border-strong); }
+  .focus::after{ background:radial-gradient(circle,var(--accent-soft),transparent 70%); }
+  .focus .who .nm,.focus.empty,.goal-o .l,.sheet .shead button{ color:var(--text-2); }
+  .focus .chip{ color:var(--text-1); }
+  .focus .memo{ color:var(--text-2); }
+  .goal-o{ background:linear-gradient(160deg,var(--bg-3),var(--bg-1)); border-color:var(--border-strong); }
+  #toast{ background:var(--bg-2); color:#fff; }
+  .modal{ background:rgba(0,0,0,.6); }
+  .sheet header{ background:var(--bg-0); }
+  .cell:focus,#addBox:focus,.goal-in input:focus{ box-shadow:0 0 0 3px var(--accent-soft); }
+  .cb.past{ background:rgba(224,97,70,.15); color:var(--danger); } .cb.today{ background:rgba(232,168,74,.15); color:var(--warn); }
+  .cb.soon{ background:rgba(52,181,110,.15); color:var(--ok); } .cb.new{ background:rgba(107,147,196,.15); color:var(--info); }
+  input::placeholder,textarea::placeholder{ color:var(--text-4); }
+  /* ---- 🆕 P1) DB 출처 관리 (개인정보보호법 제20조) ---- */
+  .src-cell{ border:1px solid var(--line); border-radius:7px; padding:4px 8px; font-size:11.5px; font-weight:700;
+    cursor:pointer; background:var(--bg-0); color:var(--text-1); white-space:nowrap; font-family:inherit; }
+  .src-cell:hover{ filter:brightness(1.15); }
+  .src-cell.src-none{ color:var(--warn); border-color:rgba(232,168,74,.5); background:rgba(232,168,74,.10); }
+  .src-cell.src-quar,.src-cell.src-out{ color:var(--danger); border-color:rgba(224,97,70,.55); background:rgba(224,97,70,.12); }
+  .src-cell.src-ok{ color:var(--ok); border-color:rgba(52,181,110,.4); }
+  #dbTable tr.is-nocall td{ background:rgba(178,58,72,.10); }
+  .acts .b-legal{ background:rgba(224,97,70,.16); border:1px solid rgba(224,97,70,.55); color:#ffb3ab; }
+  .acts .b-legal:hover{ background:rgba(224,97,70,.28); }
+  .acts .b-consent{ background:rgba(52,181,110,.16); border:1px solid rgba(52,181,110,.5); color:#7fd8a4; }
+  .acts .b-consent:hover{ background:rgba(52,181,110,.28); }
+  .acts .b-nointerest{ background:rgba(138,135,125,.22); border:1px solid rgba(138,135,125,.5); color:#cfc9bf; }
+  .acts .b-nointerest:hover{ background:rgba(138,135,125,.34); }
+  .acts .b-dead{ background:rgba(107,102,96,.24); border:1px dashed rgba(160,155,148,.55); color:#b5afa6; }
+  .acts .b-dead:hover{ background:rgba(107,102,96,.38); }
+  /* ✅ P6) 수신동의 체크 표시 — 번호 옆 / 버튼 켜진 상태 */
+  .consent-v{ margin-right:4px; font-size:11px; }
+  .acts .b-consent.on{ background:rgba(52,181,110,.32); border-color:rgba(52,181,110,.9); color:#9ff0bd; }
+  .src-banner{ border-radius:9px; padding:10px 12px; font-size:13px; font-weight:700; line-height:1.55; margin-bottom:12px; border:1px solid var(--line); }
+  .src-banner.warn{ color:var(--warn); border-color:rgba(232,168,74,.5); background:rgba(232,168,74,.10); }
+  .src-banner.danger{ color:var(--danger); border-color:rgba(224,97,70,.55); background:rgba(224,97,70,.12); }
+  .src-banner.ok{ color:var(--ok); border-color:rgba(52,181,110,.4); background:rgba(52,181,110,.08); }
+  .src-form label{ font-size:12.5px; color:var(--muted); font-weight:700; display:block; margin:0 0 4px; }
+  .src-form select,.src-form input[type=date],.src-form input[type=text]{ width:100%; border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; font-family:inherit; font-size:13px; font-weight:700; background:var(--bg-0); color:var(--text-1); }
+  .src-log{ margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+  .src-log .li{ display:flex; gap:9px; font-size:12px; padding:4px 0; color:var(--muted); }
+  .src-log .li b{ color:var(--text-1); white-space:nowrap; }
+  .audit-chip{ padding:5px 11px; font-size:12px; font-weight:800; border-radius:14px; cursor:pointer; border:1px solid var(--line);
+    background:var(--bg-0); color:var(--muted); font-family:inherit; white-space:nowrap; }
+  .audit-chip.on{ border-color:var(--gold); color:var(--gold); background:rgba(212,163,115,.12); }
+  /* ---- 🆕 P5) 미접촉 자산 회수 · 보유 정리 (개인정보 목적 외 보유 방지) ----
+     ⚖️ 문구 원칙: 이 기능은 성과 관리가 아니라 '개인정보 보유 정리'다. 미달·경고·제재·패널티 같은
+     표현을 쓰지 않는다(위촉 상담사 근로자성 쟁점 회피 — 개정 위탁계약서 제11조의2 ⑦⑧항이 근거). */
+  .rc-cell{ border:1px solid var(--line); border-radius:7px; padding:4px 8px; font-size:11.5px; font-weight:700;
+    background:var(--bg-0); color:var(--text-1); white-space:nowrap; font-family:inherit; display:inline-block; }
+  .rc-cell.rc-soon{ color:var(--warn); border-color:rgba(232,168,74,.5); background:rgba(232,168,74,.10); }
+  .rc-cell.rc-pool{ color:var(--info); border-color:rgba(107,147,196,.55); background:rgba(107,147,196,.12); }
+  .rc-cell.rc-hold{ color:var(--ok); border-color:rgba(52,181,110,.45); background:rgba(52,181,110,.10); }
+  .rc-cell.rc-exempt{ color:var(--muted); }
+  #dbTable tr.is-pool td{ background:rgba(107,147,196,.08); }
+  #recallNotice{ margin:0 0 14px; }
+  .rc-notice{ border:1px solid rgba(232,168,74,.5); background:rgba(232,168,74,.09); border-radius:11px; padding:12px 14px; }
+  .rc-notice .rc-h{ font-size:13.5px; font-weight:800; color:var(--warn); margin-bottom:4px; }
+  .rc-notice .rc-s{ font-size:12.5px; color:var(--muted); line-height:1.6; margin-bottom:9px; }
+  .rc-notice .rc-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:6px 0; border-top:1px solid var(--line); }
+  .rc-notice .rc-row .ph{ font-weight:800; }
+  .rc-btn{ padding:5px 11px; font-size:12px; font-weight:800; border-radius:8px; border:1px solid var(--line);
+    background:var(--bg-0); color:var(--text-1); font-family:inherit; cursor:pointer; white-space:nowrap; }
+  .rc-btn:hover{ filter:brightness(1.15); }
+  .rc-btn.go{ border-color:var(--gold); color:var(--gold); background:rgba(212,163,115,.12); }
+  .rc-prev{ border:1px solid rgba(107,147,196,.5); background:rgba(107,147,196,.10); border-radius:9px;
+    padding:8px 11px; font-size:12.5px; color:var(--text-1); line-height:1.6; margin-bottom:10px; }
+  .rc-tab{ padding:6px 13px; font-size:12.5px; font-weight:800; border-radius:14px; cursor:pointer; border:1px solid var(--line);
+    background:var(--bg-0); color:var(--muted); font-family:inherit; white-space:nowrap; }
+  .rc-tab.on{ border-color:var(--gold); color:var(--gold); background:rgba(212,163,115,.12); }
+  .rc-set label{ font-size:12.5px; color:var(--muted); font-weight:700; display:block; margin:0 0 4px; }
+  .rc-set input[type=number],.rc-set select{ width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font-family:inherit; font-size:13px; font-weight:700; background:var(--bg-0); color:var(--text-1); }
+  /* ---- 드롭다운 메뉴 (⚙️ 관리 / ⋯ 더보기) ---- */
+  .dd{ position:relative; display:inline-flex; }
+  .dd-menu{ position:absolute; top:calc(100% + 6px); left:0; min-width:230px; width:max-content; background:var(--bg-2);
+    border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.45);
+    padding:6px; display:none; flex-direction:column; gap:2px; z-index:80; }
+  .dd.open .dd-menu{ display:flex; }
+  .dd-right .dd-menu{ left:auto; right:0; }
+  .dd-menu .dd-item{ width:100%; text-align:left; background:transparent; border:0; border-radius:7px;
+    padding:9px 11px; font-size:13px; font-weight:700; color:var(--text-1); display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .dd-menu .dd-item:hover{ background:var(--bg-hover); }
+  .dd-menu .dd-item.dd-danger{ color:var(--danger); }
+  .dd-menu .dd-item.dd-danger:hover{ background:rgba(224,97,70,.15); }
+  /* ---- 🔠 글씨 크기 슬라이더 ---- */
+  #fontRange{ width:100%; accent-color:var(--gold); cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><span class="k">📞 콜파일럿</span><span class="s">· TM 고객관리</span></div>
+    <nav>
+      <button data-tab="today" class="on">오늘 콜</button>
+      <button data-tab="db">고객 DB</button>
+      <button data-tab="dash">대시보드</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="tools">
+      <span id="saveDot" class="save-dot"><i></i><span id="saveTxt">자동저장 켜짐</span></span>
+      <button class="btn-assign" id="btnAssign" title="서버에서 나에게 배정된 고객을 받아옵니다">🔄 배정 받기</button>
+      <!-- 저빈도 버튼을 ⚙️ 관리 드롭다운으로 정리 (핸들러는 initEvents에서 기존 id 그대로 바인딩) -->
+      <div class="dd" id="ddManage">
+        <button class="dd-trigger" id="btnManage" title="보관함·차단번호 등">⚙️ 관리</button>
+        <div class="dd-menu" id="ddManageMenu">
+          <!-- 🆕 P3) 거부/차단 보관함·차단요청 가져오기 폐지 — 거부·차단요청 번호는 DB에 보관하지 않고 파기(재발신 방지 대장만 유지) -->
+          <button id="btnArchive" class="dd-item" title="'선택 삭제'로 지운 고객을 복구할 수 있습니다">🗄 보관함 (삭제 복구)</button>
+          <button id="btnSrcAudit" class="dd-item" title="출처 미기재 고객을 모아 '출처 확인'/'출처불명 격리(발신금지)'를 일괄 적용합니다 (개인정보보호법 제20조 대응)">📋 DB 출처 관리 (일괄 분류)</button>
+          <button id="btnRecall" class="dd-item" title="오래 접촉하지 않은 고객 DB를 회사 공용 풀로 되돌려 개인정보를 목적 범위 안에서만 보유하도록 정리합니다 (개인정보보호법 제21조 · 위탁계약서 제11조의2)">🗂 미접촉 자산 회수 · 보유 정리</button>
+          <button id="btnOptoutLedger" class="dd-item" title="수신거부로 파기된 고객 내역 — 누가·언제·왜 눌렀는지 상담사별로 확인합니다">⛔ 수신거부 대장 (처리 내역)</button>
+          <!-- 🔒 「내 이름 설정」 영구 비활성(2026-07-18 요청) — 콜러 이름은 로그인 계정에서만 자동 등록.
+               버튼을 지우지 않고 숨긴 이유: 아래 bindEvents의 getElementById 바인딩이 죽는 함정 방지. 모달 코드도 유지. -->
+          <button id="btnMe" class="dd-item" style="display:none" title="콜러(발굴자) 기본값으로 쓸 내 이름을 설정합니다">👤 내 이름 설정</button>
+          <button id="btnFontSize" class="dd-item" title="화면 글씨 크기를 조절합니다">🔠 글씨 크기</button>
+          <button id="btnUploadServer" class="dd-item" style="display:none" title="마스터 전용 · 활성 고객을 서버(마스터 콘솔)로 올립니다">📤 고객 서버로 보내기</button>
+          <button id="btnHelp" class="dd-item" title="TM 고객관리 사용법 안내">❓ 사용법</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ===== 오늘 콜 ===== -->
+  <section id="v-today" class="view on">
+    <div id="focus"></div>
+    <!-- 🆕 P5) 회수 예정 통지 — 상담사 자율성 장치('진행 중'으로 보류 가능) -->
+    <div id="recallNotice"></div>
+    <div class="strip" id="todayStrip"></div>
+    <div class="sec"><h2>콜 큐</h2><span class="rule"></span><span class="count" id="queueCount"></span></div>
+    <div class="goal-hint" style="margin-top:-4px">등급 케이던스 — A 3일 · B 7일 · C 30일 · D 보류</div>
+    <div class="tablewrap"><div class="scroller"><table id="queueTable"></table></div></div>
+  </section>
+
+  <!-- ===== 고객 DB ===== -->
+  <section id="v-db" class="view">
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="번호 · 이름 · 메모 검색">
+      <select id="fStatus"></select>
+      <select id="fSrc" title="출처 분류로 필터 (개인정보보호법 대응 상태)">
+        <option value="">출처 전체</option>
+        <option value="미분류">⚠️ 미분류</option>
+        <option value="확인">🟢 확인됨</option>
+        <option value="격리">🚫 격리(발신금지)</option>
+        <option value="발신금지">⛔ 발신금지(민원)</option>
+      </select>
+      <select id="fGrade">
+        <option value="">등급 전체</option><option>A</option><option>B</option><option>C</option><option>D</option>
+      </select>
+      <!-- 🆕 P5) 보유 상태 필터 — 회수 예정·공용 풀(미배분)·보류 -->
+      <select id="fRecall" title="보유 상태로 필터 (미접촉 자산 회수 · 개인정보 보유 정리)">
+        <option value="">보유 전체</option>
+        <option value="soon">⏳ 회수 예정</option>
+        <option value="pool">📤 공용 풀 (미배분)</option>
+        <option value="hold">🟢 진행 중 (보류)</option>
+        <option value="exempt">🔒 회수 제외</option>
+      </select>
+      <button class="btn" id="btnOnlyBuje" title="상태를 부재로 필터">부재만 보기</button>
+      <select id="fBujeCount" title="부재 횟수로 필터">
+        <option value="">부재 횟수 전체</option>
+        <option value="1">1회</option>
+        <option value="2">2회</option>
+        <option value="3">3회</option>
+        <option value="4">4회 이상</option>
+      </select>
+      <input type="date" id="fDate" title="최근통화 날짜로 필터 (그 날짜에 통화한 고객만 보기)">
+      <button class="btn" id="btnDateClear" title="날짜 필터 해제" style="display:none;">날짜 해제 ✕</button>
+      <span class="grow"></span>
+      <!-- 신규 고객 직접 추가(여러 건 붙여넣기 · 앞번호 010 설정 · 출처 선택) — 2026-07-31 상담사 직접 입력 방침으로 재노출 -->
+      <button class="btn" id="btnAdd" style="background:linear-gradient(180deg,#1f9d5b,#178048);border-color:#34b56e;color:#eaf6ee;font-weight:800">＋ 고객</button>
+      <button class="btn danger" id="btnDelSel" disabled>🗑 선택 삭제</button>
+      <!-- 🆕 P3) '거부 정리' ⋯ 메뉴 폐지 — 거부·차단요청은 이제 자동 파기라 정리할 것이 없음 -->
+    </div>
+    <div class="sec"><h2>고객 목록</h2><span class="rule"></span><span class="count" id="dbCount"></span></div>
+    <div class="tablewrap"><div class="scroller"><table id="dbTable"></table></div></div>
+  </section>
+
+  <!-- ===== 대시보드 ===== -->
+  <section id="v-dash" class="view">
+    <div class="sec"><h2>핵심 지표 (KPI)</h2><span class="rule"></span><span class="count">고객DB 실시간 집계</span></div>
+    <div class="dash" id="dashCards"></div>
+    <div class="sec"><h2>전환 퍼널 (Conversion Funnel)</h2><span class="rule"></span></div>
+    <div class="card" id="dashFunnel"></div>
+    <div class="sec"><h2>상태 · 등급 분포</h2><span class="rule"></span></div>
+    <div class="card" id="statusBreak"></div>
+    <div class="sec"><h2>귀속 리포트 (콜러 · 상담자 배분)</h2><span class="rule"></span><span class="count" id="attribWarn"></span></div>
+    <div class="tablewrap"><div class="scroller" style="max-height:none"><table id="dashAttrib"></table></div></div>
+    <div class="sec"><h2>월별(등록월) 성과</h2><span class="rule"></span></div>
+    <div class="tablewrap"><div class="scroller" style="max-height:none"><table id="dashMonthly"></table></div></div>
+    <div class="sec"><h2>일별 성과 (최근 14일)</h2><span class="rule"></span></div>
+    <div class="tablewrap"><div class="scroller" style="max-height:none"><table id="dashDaily"></table></div></div>
+    <div class="sec"><h2>목표 역산 (계약 목표 → 필요 콜 수)</h2><span class="rule"></span></div>
+    <div class="card" id="dashGoal"></div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<!-- 신규 다중 추가 -->
+<div class="modal" id="addModal">
+  <div class="sheet" style="width:min(560px,96vw)">
+    <header><div class="shead"><b>신규 고객 여러 명 추가</b><span class="spacer"></span><button id="closeAdd">✕</button></div></header>
+    <div class="sbody" style="padding:16px 18px">
+      <p style="margin:0 0 9px;color:var(--muted);font-size:13px;line-height:1.5">
+        번호를 <b style="color:var(--ink)">한 줄에 하나씩</b> 붙여넣거나 입력하세요. 대시(-) 없어도 되고, 여러 개를 한꺼번에 넣어도 됩니다.<br>
+        이름도 넣으려면 <span class="mono">2431-8218, 홍길동</span> 처럼 쉼표 뒤에 적으면 됩니다. 이미 있는 번호는 자동으로 걸러집니다.</p>
+      <div style="display:flex;align-items:center;gap:9px;margin:0 0 11px;flex-wrap:wrap">
+        <label style="font-size:13px;color:var(--ink);font-weight:700">앞에 붙일 번호</label>
+        <input type="text" id="addPrefix" value="010" autocomplete="off"
+          style="width:120px;border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-family:'SF Mono',Consolas,monospace;font-size:14px;font-weight:700;background:var(--bg-0);color:var(--ink)">
+        <span style="font-size:12.5px;color:var(--muted)">기본 <b style="color:var(--ink)">010</b> — 뒷자리만 입력하면 됩니다. 투넘버는 <b class="mono" style="color:var(--ink)">*28</b> 처럼 바꾸세요(그럼 <span class="mono">*28+번호</span>로 저장).</span>
+      </div>
+      <!-- 출처(수집 출처) 입력 제거(2026-08-01) — 전화하며 「DB 출처 관리」로 분류하는 워크플로라 앞단 입력 불필요. 신규는 '미분류'로 등록됨. -->
+
+      <div style="display:flex;align-items:center;gap:9px;margin:0 0 11px;flex-wrap:wrap">
+        <label style="font-size:13px;color:var(--ink);font-weight:700">상담사(담당자)</label>
+        <input type="text" id="addCaller" list="staffNames" autocomplete="off" placeholder="이름"
+          style="width:140px;border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:13.5px;font-weight:700;background:var(--bg-0);color:var(--ink)">
+        <span style="font-size:12.5px;color:var(--muted)">기본값은 「⚙️ 관리 → 👤 내 이름 설정」에 저장한 내 이름입니다. 지금 추가하는 고객 전체에 같은 담당자가 적용됩니다.</span>
+      </div>
+      <textarea id="addBox" placeholder="24318218&#10;86694716&#10;6664 6235, 김국성"></textarea>
+      <div class="add-foot">
+        <span class="prev" id="addPreview"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="cancelAdd">취소</button>
+        <button class="btn gold" id="addConfirm">추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 거부 보관함 -->
+<div class="modal" id="archiveModal">
+  <div class="sheet">
+    <header><div class="shead"><b id="archiveTitle">거부 보관함</b><span class="spacer"></span>
+      <button class="btn danger" id="btnEmptyArchive" style="margin-right:10px">전체 완전삭제</button>
+      <button id="closeArchive">✕</button></div></header>
+    <div class="sbody"><table id="archiveTable"></table><div id="archiveEmpty" class="empty-note">보관된 고객이 없습니다.</div></div>
+  </div>
+</div>
+
+<!-- 🔠 글씨 크기 (TM 자체 설정 · localStorage) -->
+<div class="modal" id="fontModal">
+  <div class="sheet" style="width:min(360px,92vw)">
+    <header><div class="shead"><b>🔠 글씨 크기</b><span class="spacer"></span><button id="closeFontModal">✕</button></div></header>
+    <div class="sbody" style="padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;color:var(--muted);font-weight:700">화면 전체 글씨 크기</span>
+        <span id="fontPct" class="mono" style="font-size:17px;font-weight:800;color:var(--gold)">100%</span>
+      </div>
+      <input type="range" id="fontRange" min="80" max="150" step="5" value="100">
+      <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:16px">
+        <button class="btn" id="fontReset">기본값 100%</button>
+        <button class="btn gold" id="fontDone">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 👤 내 이름 설정 (콜러 기본값 · localStorage 'tmcrm_me') -->
+<div class="modal" id="meModal">
+  <div class="sheet" style="width:min(360px,92vw)">
+    <header><div class="shead"><b>👤 내 이름 설정</b><span class="spacer"></span><button id="closeMeModal">✕</button></div></header>
+    <div class="sbody" style="padding:18px 20px">
+      <p style="margin:0 0 10px;color:var(--muted);font-size:12.5px;line-height:1.5">여기 입력한 이름이 신규 고객 추가·발신결과 반영 시 <b style="color:var(--ink)">콜러(발굴자)</b> 기본값으로 자동 채워집니다. (이미 콜러가 채워진 고객은 덮어쓰지 않습니다)</p>
+      <input type="text" id="meInput" placeholder="예: 홍길동" autocomplete="off"
+        style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;font-weight:700;background:var(--bg-0);color:var(--ink)">
+      <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:16px">
+        <button class="btn" id="meCancel">취소</button>
+        <button class="btn gold" id="meSave">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🆕 P1) 📋 DB 출처 관리 — 출처 미기재 고객 일괄 분류 (확인/격리) -->
+<div class="modal" id="srcAuditModal">
+  <div class="sheet" style="width:min(880px,97vw)">
+    <header><div class="shead"><b>📋 DB 출처 관리 — 개인정보보호법 대응</b><span class="spacer"></span><button id="closeSrcAudit">✕</button></div></header>
+    <div class="sbody" style="padding:14px 18px" id="srcAuditBody"></div>
+  </div>
+</div>
+
+<!-- 🆕 P5) 🗂 미접촉 자산 회수 · 보유 정리 (출처 상세·수신거부 모달보다 앞 = 그것들이 위에 뜬다) -->
+<div class="modal" id="recallModal">
+  <div class="sheet" style="width:min(1000px,97vw)">
+    <header><div class="shead"><b>🗂 미접촉 자산 회수 · 보유 정리</b><span class="spacer"></span>
+      <button class="btn" id="btnRecallExport" style="margin-right:10px;display:none" title="회수·보류·재배분 이력을 엑셀로 열 수 있는 파일(CSV)로 내려받습니다 — 개인정보 보호조치 이행 증빙 · 마스터 전용">📥 이력 내보내기</button>
+      <button id="closeRecall">✕</button></div></header>
+    <div class="sbody" style="padding:14px 18px" id="recallBody"></div>
+  </div>
+</div>
+
+<!-- 🆕 P4) ⛔ 수신거부 대장 — 누가·언제·왜 눌렀는지 감사(관리자용) -->
+<div class="modal" id="optoutLedgerModal">
+  <div class="sheet" style="width:min(900px,97vw)">
+    <header><div class="shead"><b>⛔ 수신거부 대장 — 처리 내역 감사</b><span class="spacer"></span>
+      <button class="btn" id="btnOptoutCopy" style="margin-right:10px;display:none" title="관리자에게 보낼 수 있게 표 형식으로 복사 · 마스터 전용">📋 내역 복사</button>
+      <button id="closeOptoutLedger">✕</button></div></header>
+    <div class="sbody" style="padding:14px 18px" id="optoutLedgerBody"></div>
+  </div>
+</div>
+
+<!-- 🆕 P4) ⛔ 수신거부 사유 입력 (대장·출처 모달 위에 떠야 하므로 뒤에 배치) -->
+<div class="modal" id="optoutModal">
+  <div class="sheet" style="width:min(470px,95vw)">
+    <header><div class="shead"><b style="color:var(--danger)">⛔ 수신거부 — 고객이 뭐라고 하셨나요?</b><span class="spacer"></span><button id="closeOptout">✕</button></div></header>
+    <div class="sbody" style="padding:16px 18px" id="optoutBody"></div>
+  </div>
+</div>
+
+<!-- 🆕 P1) 📋 출처 상세 — 고객 1명의 수집 출처·동의·법정 로그 (srcAuditModal 위에 떠야 하므로 뒤에 배치) -->
+<div class="modal" id="srcModal">
+  <div class="sheet" style="width:min(560px,96vw)">
+    <header><div class="shead"><b id="srcTitle">📋 출처 상세</b><span class="spacer"></span><button id="closeSrc">✕</button></div></header>
+    <div class="sbody" style="padding:16px 18px" id="srcBody"></div>
+  </div>
+</div>
+
+<script>
+const EMBEDDED = [];
+/* 🆕 P3(2026-07-18 오후) — '거부'·'차단요청' 상태 폐지: 해당 번호는 DB에 두지 않고
+   수신거부 대장(재발신 방지 최소 정보)에 기록 후 즉시 파기한다. 레거시 데이터는 purgeLegacyOnce가 1회 정리. */
+const STATUSES = ["신규","부재","연속부재","나중연락","관심없음","결번","가망","방문예약","방문완료","계약협의","계약완료"];
+// 🆕 DB 출처(채널) — 엑셀 TM_고객관리시스템과 동일한 8종
+const SOURCES = ["전화문의","인터넷광고","블로그","인스타그램","지인소개","분양홍보관","DB구매","기타"];
+/* 🆕 P1) 개인정보보호법 제20조(수집 출처 고지) 대응 — 법정 출처 필드
+   · srcPath(수집 경로)·srcConsent(동의 방식)는 신규 등록 시 필수(미기재 = 저장 차단)
+   · srcState: ""=미분류 · "확인"=출처 확인됨 · "격리"=출처불명 격리(발신금지)
+   · optOutAt/optOutReason: 발신금지 일시·사유(레거시 출처민원 기록 표시용 — 신규 수신거부는 대장 기록 후 파기)
+   · srcLog: 추가전용 로그 [{ts,type,note}] — 언제 무엇을 근거로 처리했는지 남긴다 */
+const SRC_PATHS = ["자발 문의","홈페이지·광고 유입","지인 소개","명함·직접 수집","기타"];
+const SRC_CONSENTS = ["전화 동의","문자 동의","서면 동의","온라인 폼"];
+// 세부 채널(SOURCES) → 수집 경로 자동 매핑 — 일괄 분류 도구의 "채널 자동" 옵션에서 사용
+const CH2PATH = {전화문의:"자발 문의",인터넷광고:"홈페이지·광고 유입",블로그:"홈페이지·광고 유입",인스타그램:"홈페이지·광고 유입",지인소개:"지인 소개",분양홍보관:"명함·직접 수집",DB구매:"기타",기타:"기타"};
+// 발신금지 판정 — 격리 또는 민원/수신거부 옵트아웃이면 콜 큐 제외 + 발신 잠금
+function isNoCall(r){ return r.srcState==="격리" || !!r.optOutAt; }
+function pushSrcLog(r,type,note){ if(!Array.isArray(r.srcLog)) r.srcLog=[]; r.srcLog.push({ts:new Date().toISOString(),type:type,note:note||""}); }
+/* 🆕 P3) 수신거부 옵트아웃 대장 — 고객 DB는 파기하되, 재발신 방지에 필요한 최소 정보(번호·일시·사유)만
+   별도 보관(정통망법 수신거부 관리 의무 근거). 부모 store('tmcrm_optout')에도 미러해 재설치·발신 잠금에 사용. */
+const OPTOUT_KEY="tmcrm_optout_v1";
+let optoutLedger=[];
+function loadOptout(){ try{ optoutLedger=JSON.parse(localStorage.getItem(OPTOUT_KEY)||"[]")||[]; }catch(e){ optoutLedger=[]; }
+  if(!Array.isArray(optoutLedger)) optoutLedger=[]; }
+function saveOptout(){ try{ localStorage.setItem(OPTOUT_KEY,JSON.stringify(optoutLedger)); }catch(e){}
+  try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"tmcrm:optout-persist",items:optoutLedger},"*"); }catch(e){} }
+/* ✅ P6) 수신동의 체크 목록을 부모(발신 패널)에 미러 — 발신 화면 큐/버튼의 ✓ 표시가 TM과 항상 같아진다.
+   save() 마다 호출되므로 어느 화면에서 체크하든 즉시 반영. */
+function pushConsentMirror(){
+  try{
+    if(!(window.parent&&window.parent!==window)) return;
+    const items=state.customers.concat(state.archive)
+      .filter(r=>r&&r.consentAt&&r.phone)
+      .map(r=>({digits:digits(r.phone),at:r.consentAt,via:r.srcConsent||"전화 동의"}));
+    window.parent.postMessage({type:"tmcrm:consent-persist",items},"*");
+  }catch(e){}
+}
+function optoutHas(d){ return !!d && optoutLedger.some(o=>o&&o.digits===d); }
+/* 🆕 P4) 대장 항목에 감사(監査) 필드 추가 — said(고객 발언)·agent(누른 상담사)·callSec(통화시간)·src(경로).
+   "상담사가 임의로 수신거부를 남발하는지"를 관리자가 확인할 근거. 기록은 삭제 불가(대장은 append-only 운영). */
+function optoutAdd(rec,reason,note,extra){
+  const d=digits(rec&&rec.phone); if(!d) return;
+  extra=extra||{};
+  const me=loadMyName();
+  const hit=optoutLedger.find(o=>o&&o.digits===d);
+  if(hit){
+    hit.ts=new Date().toISOString(); hit.reason=reason||hit.reason;
+    if(note) hit.note=(hit.note?hit.note+" · ":"")+note;
+    if(extra.said) hit.said=(hit.said?hit.said+" · ":"")+extra.said;
+    if(extra.agent||me) hit.agent=extra.agent||me;
+    if(extra.callSec!=null) hit.callSec=extra.callSec;
+    if(extra.src) hit.src=extra.src;
+  } else {
+    optoutLedger.push({digits:d,phone:rec.phone,name:rec.name||"",reason:reason||"수신거부",
+      ts:new Date().toISOString(),note:note||"",
+      said:extra.said||"", agent:extra.agent||me||"", callSec:(extra.callSec==null?null:extra.callSec), src:extra.src||"TM"});
+  }
+  saveOptout();
+}
+/* 🚩 감사 플래그 — 관리자에게 "이건 좀 이상하다"를 자동으로 짚어준다.
+   ①통화 없음/10초 미만(통화도 안 하고 눌렀을 가능성) ②사유가 5자 미만(성의 없음) ③같은 상담사가 같은 날 8건 이상 */
+/* 🚩 플래그 기준(2026-07-18 저녁 사용자 확정): ①통화 없이 누름 = 무조건 발동 ②통화 8초 미만 ③사유 부실.
+   '하루 N건 이상'은 정상 업무에서도 많이 나올 수 있어 제외.
+   ⚠ TM 화면엔 통화 타이머가 없지만 고객의 callLog(발신 연동으로 쌓인 통화기록)에서 직전 통화 길이를
+     찾아 callSec을 채우므로(logLegal), TM 기록도 통화 여부가 판정된다 → '통화 없음'을 항상 검사한다. */
+const OPTOUT_SHORT_SEC=8;
+function optoutFlags(o){
+  const f=[];
+  if(o.callSec==null) f.push({k:"통화 없음",t:"통화 기록이 없는데 수신거부를 눌렀음"});
+  else if(o.callSec<OPTOUT_SHORT_SEC) f.push({k:`통화 ${o.callSec}초`,t:`거부 의사를 확인하기엔 지나치게 짧음(${OPTOUT_SHORT_SEC}초 미만)`});
+  if(!o.said||o.said.trim().length<5) f.push({k:"사유 부실",t:"고객 발언이 기록되지 않음"});
+  return f;
+}
+function optoutAppendNote(d,note){ const hit=optoutLedger.find(o=>o&&o.digits===d); if(hit&&note){ hit.note=(hit.note?hit.note+" · ":"")+note; saveOptout(); } }
+/* 📱 LAN 동기화 유입 대장 병합 — 폰(cp_optout_v1)에서 온 수신거부를 digits 합집합·ts 최신 우선으로 합치고,
+   대장에 오른 번호의 고객은 여기(활성+보관함)서도 즉시 파기 + CRM(고객 목록)에 remove 전파.
+   부모 bridge 가 sync-server 병합 직후(cp:optout-sync)와 TM 열릴 때(tmcrm:ready)마다 밀어준다. */
+function mergeOptoutRemote(items){
+  let changed=false,purged=0;
+  (items||[]).forEach(it=>{
+    if(!it) return;
+    const d=digits(it.digits||it.phone); if(!d) return;
+    const hit=optoutLedger.find(o=>o&&o.digits===d);
+    if(!hit){
+      optoutLedger.push({digits:d,phone:it.phone||fmtPhoneOut(d),name:it.name||"",reason:it.reason||"수신거부",
+        ts:it.ts||new Date().toISOString(),note:it.note||"",
+        said:it.said||"",agent:it.agent||"",callSec:(it.callSec==null?null:it.callSec),src:it.src||"모바일"});
+      changed=true;
+    } else if(String(it.ts||"")>String(hit.ts||"")){
+      hit.ts=it.ts; if(it.reason)hit.reason=it.reason; if(it.note)hit.note=it.note;
+      if(it.said)hit.said=it.said; if(it.agent)hit.agent=it.agent;
+      if(it.callSec!=null)hit.callSec=it.callSec; if(it.src)hit.src=it.src;
+      changed=true;
+    }
+    const r=purgeByDigits(d);
+    if(r){ purged++; emitCust(r,"remove"); }
+  });
+  if(changed) saveOptout();
+  if(purged){ save(); renderAll(); toast(`⛔ 폰 동기화 수신거부 ${purged}건 — 고객 DB 파기 완료 (재발신 방지 목록 보관)`); }
+  if(changed||purged){
+    try{ if(document.getElementById("optoutLedgerModal").classList.contains("on")) renderOptoutLedger(); }catch(e){}
+    try{ if(document.getElementById("srcAuditModal").classList.contains("on")) renderSrcAudit(); }catch(e){}
+  }
+}
+/* 번호를 고객 DB(활성+보관함)에서 완전히 제거 */
+function purgeByDigits(d){
+  let removed=null;
+  state.customers=state.customers.filter(c=>{ if(digits(c.phone)===d){ removed=c; return false; } return true; });
+  state.archive=state.archive.filter(c=>{ if(digits(c.phone)===d){ removed=removed||c; return false; } return true; });
+  return removed;
+}
+/* 🆕 F4/F5) 귀속(콜러/1차 상담자) 인센티브 배분 비율 — 로엔 합의안 제2조 연동. 비율이 바뀌면 이 상수만 고치면 된다. */
+const ATTRIB_SPLIT = { caller: 0.6, counselor: 0.4 };
+// 콜파일럿 공식 상태 색상(9종 기준) — 연속부재는 부재보다 짙게, 계약협의=방문완료, 계약완료=계약 색상 사용
+const STATUS_COLOR = {신규:"#6b93c4",부재:"#9aa0a6",연속부재:"#7d8288",나중연락:"#cf9d52",관심없음:"#8a877d",결번:"#6b6660",가망:"#cf6b5c",방문예약:"#c96442",방문완료:"#5a9d6b",계약협의:"#5a9d6b",계약완료:"#3ec46d",거부:"#8a877d",차단요청:"#b23a48"};
+// 큐에서 제외되는 상태 (차단요청 = 절대 발신 금지)
+// 결번 = 연결 자체가 불가능 → 콜 큐에서 영구 제외(DB엔 남겨 출처별 결번율을 잰다)
+const OUT_OF_QUEUE = new Set(["거부","방문완료","계약완료","차단요청","결번"]);
+// 결과 로그 시 자동 다음연락일(일 단위). null=비움
+// 관심없음 = 90일 뒤 재접촉(장기 보류) — DB는 유지하되 당장 큐에는 안 올라오게
+const SCHEDULE = {부재:2,연속부재:5,나중연락:1,관심없음:90,결번:null,가망:1,방문예약:null,거부:null,차단요청:null};
+const GRADE_ORDER={A:0,B:1,C:2,D:3,"":4};
+/* 🆕 F1) 엑셀 SLA 등급별 콜백 케이던스 — A=3일 · B=7일 · C=30일 · D=보류(자동설정 안 함) */
+const GRADE_CADENCE={A:3,B:7,C:30};
+/* 다음연락일이 이미 있으면 절대 덮지 않음(사용자가 지정한 날짜 우선) — 폴백으로만 채운다.
+   등급 변경(editField 'grade') 시 사용: 등급 케이던스만 적용 */
+function applyGradeCadenceFallback(r){
+  if(r.nextCall) return;
+  const cad=GRADE_CADENCE[r.grade];
+  if(cad!=null) r.nextCall=addDays(cad);
+}
+/* 결과 로그(logResult · 발신결과 수신) 시 사용: ①상태별 SCHEDULE 값이 있으면 그 값으로,
+   ②없으면(null/미정의) 등급 A/B/C 케이던스로, ③D·등급없음이면 현행대로 비워둔다(손대지 않음) */
+function applyResultCadence(r,status){
+  if(r.nextCall) return;
+  const days=SCHEDULE[status];
+  if(days!=null){ r.nextCall=addDays(days); return; }
+  applyGradeCadenceFallback(r);
+}
+/* 전환 퍼널 단계(누적) — 엑셀 '월별성과' 정의와 동일: DB→통화→가망→예약→방문→계약 */
+const S_GAMANG=new Set(["가망","방문예약","방문완료","계약협의","계약완료"]);
+const S_YEYAK =new Set(["방문예약","방문완료","계약협의","계약완료"]);
+const S_BANGMUN=new Set(["방문완료","계약협의","계약완료"]);
+const S_GYEYAK=new Set(["계약완료"]);
+function monKey(iso){ const d=new Date(iso); if(isNaN(d)) return ""; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
+function monLabel(k){ if(!k) return "미상"; const [y,m]=k.split("-"); return `${y.slice(2)}년 ${+m}월`; }
+function dowLabel(iso){ const d=new Date(iso); if(isNaN(d)) return ""; return ["일","월","화","수","목","금","토"][d.getDay()]; }
+
+let state={customers:[],archive:[]};
+let uidSeq=1;
+const KEY="tmcrm_tm_v1";
+let saveMode="local";
+/* 정렬/선택 상태 (고객 DB) */
+let sortKey=null, sortDir=1;   // null=원상태(기본 DB등록일 최신순) · 1=오름(▲) · -1=내림(▼)
+let selected=new Set();                 // 체크된 고객 uid
+let lastRendered=[];                    // 현재 화면에 그린 고객(전체선택/선택삭제 기준)
+/* 날짜+시간 표기 (YY-MM-DD HH:MM) */
+function fmtStamp(iso){ if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return "—";
+  const q=n=>String(n).padStart(2,"0");
+  return `${String(d.getFullYear()).slice(2)}-${q(d.getMonth()+1)}-${q(d.getDate())} ${q(d.getHours())}:${q(d.getMinutes())}`; }
+
+/* ---------- utils ---------- */
+const todayStr=()=>{const d=new Date();return d.toISOString().slice(0,10);};
+function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function digits(s){return (s||"").replace(/\D/g,"");}
+function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function normalizeRec(r){
+  return {uid:uidSeq++,phone:r.phone||"",name:r.name||"",grade:r.grade||"",status:r.status||"신규",
+    lastCall:r.lastCall||"",lastCallAt:r.lastCallAt||"",nextCall:r.nextCall||"",
+    nextCallTime:r.nextCallTime||"",   // 🆕 P3) 콜백 시각(HH:MM) — "저녁 5시에 전화" 같은 약속을 놓치지 않게
+    age:r.age||"",pyeong:r.pyeong||"",purpose:r.purpose||"",
+    budget:r.budget||"",region:r.region||"",visitDate:r.visitDate||"",visited:r.visited||"",
+    contracted:r.contracted||"",contractDate:r.contractDate||"",objection:r.objection||"",memo:r.memo||"",
+    source:r.source||"",   // 🆕 DB 출처(채널) — 전화문의/인터넷광고/블로그/인스타그램/지인소개/분양홍보관/DB구매/기타
+    srcPath:r.srcPath||"", srcDate:r.srcDate||"", srcConsent:r.srcConsent||"", srcProof:r.srcProof||"",   // 🆕 P1) 법 제20조 — 수집 경로·일자·동의 방식·증빙 메모
+    consentAt:r.consentAt||"",   // ✅ P6) 수신동의 체크 일시(ISO) — 있으면 이 번호는 동의받음(✓ 표시 기준)
+    srcState:r.srcState||"", optOutAt:r.optOutAt||"", optOutReason:r.optOutReason||"",   // 🆕 P1) ""=미분류·확인·격리 / 민원·수신거부 발신금지 일시·사유
+    srcLog:Array.isArray(r.srcLog)?r.srcLog:[],   // 🆕 P1) 법정 대응 로그(추가전용) — {ts,type,note}
+    caller:r.caller||"", counselor:r.counselor||"",   // 🆕 F4) 귀속 — 콜러(발굴/방문시킨 사람) · 1차 상담자. 인센티브 배분(로엔 합의안 제7조) 근거 기록용
+    bujeCount:r.bujeCount||0,createdAt:r.createdAt||"",
+    callLog:Array.isArray(r.callLog)?r.callLog:[],   // 🆕 통화별 구조 로그(조회·통계용). memo 블롭은 그대로 유지, 이건 추가 필드.
+    /* 🆕 P5) 미접촉 자산 회수 — 기존 데이터 무손실 마이그레이션.
+       assignedTo가 없던 예전 고객은 caller(로그인 계정 자동 스탬프)를 담당으로 승계하고,
+       assignedAt이 없으면 createdAt(=DB등록일)을 배분일로 본다. 값이 없어도 아무 것도 깨지지 않는다. */
+    assignedTo:(r.assignedTo!=null&&r.assignedTo!=="")?r.assignedTo:(r.caller||""),   // 담당 상담사(빈 값 = 회사 공용 풀)
+    assignedAt:r.assignedAt||r.createdAt||"",   // 배분일 — 최종 접촉이 없을 때의 회수 기준
+    holdUntil:r.holdUntil||"", holdAt:r.holdAt||"", holdBy:r.holdBy||"",   // '진행 중' 보류(만료일·누른 시각·누른 사람)
+    poolState:r.poolState||"",   // ""=배정 중 · "공용풀"=회수되어 미배분
+    recalledAt:r.recalledAt||"", prevOwner:r.prevOwner||"", prevTouch:r.prevTouch||"",   // 회수 시각·이전 담당·회수 시점의 최종 접촉일
+    reassignReq:r.reassignReq||"", reassignBy:r.reassignBy||"",   // 재배분 요청(일시·요청자)
+    crmId:(r.crmId!=null&&r.crmId!=="")?r.crmId:null};   // 🆕 서버 배정(cp_customers) 연동 id — 있으면 배정으로 들어온 고객
+}
+
+/* ============================================================
+   🆕 P5) 미접촉 DB 자동 회수 · 재배분 엔진
+   ------------------------------------------------------------
+   ⚖️ 설계 의도(문구까지 지켜야 함): 이것은 '성과 관리(전화 안 하면 뺏기)'가 아니라
+      개인정보를 수집 목적 범위를 넘겨 보유하지 않기 위한 '회사 자산(DB) 회수'다.
+      위촉(프리랜서) 상담사에게 활동량 기반 불이익을 주는 제도로 읽히면 근로자성 분쟁에서
+      회사에 불리한 증거가 된다(대법원 2023다254366). 그래서 UI·알림·로그 어디에도
+      '미달·경고·제재·패널티'를 쓰지 않고 '미접촉 자산 회수 / 보유 정리'로만 쓴다.
+      계약적 근거: 개정 위탁계약서 제11조의2 ⑦⑧항.
+   ------------------------------------------------------------
+   · 회수 = 담당 배정 해제 + 회사 공용 풀 이동. 고객 데이터·상담 이력·수신거부/민원 기록은
+     하나도 지우지 않는다(파기는 수신거부 대장 경로에서만 일어난다).
+   · 회수 제외는 하드 게이트(recallExempt) — 수신거부·격리·출처 민원·계약 진행 건은
+     설정을 어떻게 바꿔도 회수되지 않는다.
+   ============================================================ */
+const RECALL_CFG_KEY="tmcrm_recall_cfg_v1";
+const RECALL_LOG_KEY="tmcrm_recall_log_v1";
+const RECALL_DEFAULT={enabled:true,days:30,notifyDays:7,holdDays:30,minGapDays:30,autoAssign:false,rrIdx:0};
+let recallCfg={...RECALL_DEFAULT};
+let recallLog=[];   // 추가전용 감사 로그 [{ts,type,phone,name,owner,to,reason,by}]
+function loadRecallCfg(){
+  try{ const p=JSON.parse(localStorage.getItem(RECALL_CFG_KEY)||"null"); if(p&&typeof p==="object") recallCfg={...RECALL_DEFAULT,...p}; }catch(e){}
+  // 방어: 숫자 설정이 깨져 있으면 기본값으로 되돌린다(0일 회수 같은 사고 방지)
+  ["days","notifyDays","holdDays","minGapDays"].forEach(k=>{
+    const n=parseInt(recallCfg[k],10); recallCfg[k]=(isNaN(n)||n<1)?RECALL_DEFAULT[k]:n; });
+}
+function saveRecallCfg(){ try{ localStorage.setItem(RECALL_CFG_KEY,JSON.stringify(recallCfg)); }catch(e){} schedulePersistMirror(); }
+function loadRecallLog(){ try{ recallLog=JSON.parse(localStorage.getItem(RECALL_LOG_KEY)||"[]")||[]; }catch(e){ recallLog=[]; }
+  if(!Array.isArray(recallLog)) recallLog=[]; }
+function saveRecallLog(){ try{ localStorage.setItem(RECALL_LOG_KEY,JSON.stringify(recallLog)); }catch(e){} schedulePersistMirror(); }
+/* 감사 로그는 추가전용 — 삭제 UI를 두지 않는다(개인정보 보호조치 이행 증빙으로 쓰인다) */
+function recallLogAdd(type,r,reason,to){
+  recallLog.push({ts:new Date().toISOString(),type:type,phone:(r&&r.phone)||"",name:(r&&r.name)||"",
+    owner:(r&&(r.prevOwner||r.assignedTo))||"",to:to||"",reason:reason||"",by:loadMyName()});
+  if(recallLog.length>5000) recallLog=recallLog.slice(-5000);   // 무한 증식 방지(오래된 것부터 정리)
+  saveRecallLog();
+}
+/* ISO 정규화 — callLog.ts 는 숫자(Date.now())로 쌓인 것도 있어 문자열 비교 전에 통일한다 */
+function isoOf(v){ if(!v&&v!==0) return ""; if(typeof v==="number"){ const d=new Date(v); return isNaN(d)?"":d.toISOString(); }
+  const s=String(v); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s+"T23:59:59.000Z"; const d=new Date(s); return isNaN(d)?"":d.toISOString(); }
+/* 최종 접촉일 = 통화·문자·기록 갱신 중 가장 최신 (lastCallAt · callLog · srcLog 중 '실제 접촉' 항목).
+   ⚠️ srcLog 는 전부 보면 안 된다 — 출처 일괄 분류·보류·재배분 같은 '관리 행위'까지 접촉으로 세면
+   접촉하지 않았는데 접촉한 것처럼 기록돼 보유 근거가 왜곡되고, '진행 중' 버튼이 회수를 무한 연기시킨다.
+   그래서 고객과 실제로 닿은 이벤트만 화이트리스트로 센다. */
+const TOUCH_LOG_TYPES=new Set(["수신동의","증빙 녹음","출처 문의 민원","수신거부","발신금지 해제"]);
+function lastTouchAt(r){
+  let t=isoOf(r.lastCallAt)||isoOf(r.lastCall);
+  if(Array.isArray(r.callLog)) r.callLog.forEach(c=>{ const s=isoOf(c&&c.ts); if(s>t) t=s; });
+  if(Array.isArray(r.srcLog)) r.srcLog.forEach(l=>{ if(!l||!TOUCH_LOG_TYPES.has(l.type)) return;
+    const s=isoOf(l.ts); if(s>t) t=s; });
+  return t;
+}
+/* 최종 접촉이 없으면 '배분일'(assignedAt, 없으면 DB등록일) 기준 */
+function recallAnchor(r){ return lastTouchAt(r)||isoOf(r.assignedAt)||isoOf(r.createdAt)||""; }
+function daysSinceIso(iso){ if(!iso) return null; const d=new Date(iso); if(isNaN(d)) return null;
+  return Math.floor((Date.now()-d.getTime())/86400000); }
+/* 🔒 회수 제외 — 하드 게이트. 여기 걸리면 어떤 경로로도 회수·재배분되지 않는다. */
+const RECALL_KEEP_STATUS=new Set(["방문예약","방문완료","계약협의","계약완료"]);   // 계약 완료·진행 중
+function hasSrcComplaint(r){ return Array.isArray(r.srcLog)&&r.srcLog.some(l=>l&&l.type==="출처 문의 민원"); }
+function recallExempt(r){
+  if(!r) return "";
+  if(r.optOutAt) return "수신거부·발신금지";                       // 대장 기록 대상 — 다시 돌리지 않는다
+  if(r.srcState==="격리") return "출처 확인 대상(1회 접촉 원칙)";   // 재배분하면 같은 고객에게 두 번 전화하게 됨 → 절대 제외
+  if(hasSrcComplaint(r)) return "출처 문의 민원 이력";
+  if(RECALL_KEEP_STATUS.has(r.status)) return "계약 진행·완료";
+  return "";
+}
+/* 보유 상태 판정 — {k, exempt, days, left}
+   k: exempt(제외) · pool(공용 풀) · hold(진행 중 보류) · due(회수 대상) · soon(회수 예정) · ok */
+function recallStatus(r){
+  const ex=recallExempt(r);
+  if(ex) return {k:"exempt",reason:ex};
+  if(r.poolState==="공용풀") return {k:"pool"};
+  const el=daysSinceIso(recallAnchor(r));
+  if(el==null) return {k:"ok"};
+  if(r.holdUntil&&r.holdUntil>=todayStr()) return {k:"hold",days:el,until:r.holdUntil};
+  if(!recallCfg.enabled) return {k:"ok",days:el};
+  const left=recallCfg.days-el;
+  if(left<=0) return {k:"due",days:el,left:0};
+  if(left<=recallCfg.notifyDays) return {k:"soon",days:el,left:left};
+  return {k:"ok",days:el,left:left};
+}
+function isPooled(r){ return r&&r.poolState==="공용풀"; }
+/* 회수 실행 — 배정만 해제하고 데이터는 그대로 둔다. 수신거부·민원 이력은 레코드에 붙어 그대로 승계된다. */
+function doRecall(r,reason){
+  if(!r||recallExempt(r)||isPooled(r)) return false;
+  r.prevOwner=r.assignedTo||r.caller||"";
+  r.prevTouch=recallAnchor(r);
+  r.assignedTo=""; r.poolState="공용풀"; r.recalledAt=new Date().toISOString();
+  r.holdUntil=""; r.holdAt=""; r.holdBy=""; r.reassignReq=""; r.reassignBy="";
+  pushSrcLog(r,"보유 정리","미접촉 자산 회수 — 회사 공용 풀로 이동(데이터·이력 보존)"+(reason?" · "+reason:""));
+  recallLogAdd("회수",r,reason||"기준일 경과");
+  return true;
+}
+/* 자동 회수 스윕 — 부팅 시 1회 + 이후 6시간마다. 조용히 돌고 결과만 알린다. */
+function runRecallSweep(silent){
+  if(!recallCfg.enabled) return 0;
+  const due=state.customers.filter(r=>recallStatus(r).k==="due");
+  let n=0; due.forEach(r=>{ if(doRecall(r,"기준일 "+recallCfg.days+"일 경과 자동 정리")) n++; });
+  if(n){ save(); renderAll(); if(!silent) toast(`🗂 미접촉 ${n}건을 회사 공용 풀로 정리했습니다 (데이터·이력은 그대로 보존)`); }
+  return n;
+}
+/* 재배분 — 출처가 확인된 DB만. 제외 대상은 여기서도 차단한다(이중 안전장치). */
+function doReassign(r,to,how){
+  if(!r) return "고객을 찾을 수 없습니다";
+  const ex=recallExempt(r); if(ex) return "재배분 제외 대상입니다 ("+ex+")";
+  if(r.srcState!=="확인") return "출처가 확인된 DB만 재배분할 수 있습니다";
+  if(!to) return "담당 상담사를 선택하세요";
+  r.assignedTo=to; r.assignedAt=new Date().toISOString();
+  r.poolState=""; r.recalledAt=""; r.reassignReq=""; r.reassignBy="";
+  r.holdUntil=""; r.holdAt=""; r.holdBy="";
+  pushSrcLog(r,"재배분","담당 "+to+(r.prevOwner?" · 이전 담당 "+r.prevOwner:""));
+  recallLogAdd("재배분",r,how||"관리자 배분",to);
+  emitCust(r,"upsert");
+  return "";
+}
+/* 마지막 접촉 후 최소 간격 미경과 — 재배분돼도 바로 걸지 말라는 발신 경고(차단은 아님) */
+function tooSoonToCall(r){
+  const el=daysSinceIso(lastTouchAt(r));
+  return el!=null && el<recallCfg.minGapDays ? (recallCfg.minGapDays-el) : 0;
+}
+/* 상담사 목록 — 담당·콜러·상담자로 등장한 이름 전부(순번 배분·수동 배분 선택지) */
+function staffPool(){
+  const s=new Set();
+  state.customers.concat(state.archive).forEach(r=>{ if(r.assignedTo)s.add(r.assignedTo); if(r.caller)s.add(r.caller); if(r.counselor)s.add(r.counselor); });
+  const me=loadMyName(); if(me) s.add(me);
+  return Array.from(s).sort((a,b)=>a.localeCompare(b,"ko"));
+}
+/* 상태를 새로 반영할 때 부재 횟수 갱신: 부재로 바뀌면 +1, 다른 상태로 바뀌면 0으로 리셋 */
+function applyBujeCount(r,newStatus){
+  if(newStatus==="부재") r.bujeCount=(r.bujeCount||0)+1;
+  else if(newStatus && newStatus!==r.status) r.bujeCount=0;
+}
+
+/* ============================================================
+   🔗 양방향 미러 (TM 고객관리 ↔ 부모의 고객 목록/CRM)
+   - 이 화면에서 고객을 추가/수정/삭제하면 emitCust 로 부모에 알린다.
+   - 부모(CRM/발신결과)에서 온 변경은 applyCustFromParent 로 반영(재발신 금지).
+   - 상태값은 여기 어휘(11종)를 그대로 canonical 로 사용, 변환은 부모 bridge 담당.
+   ============================================================ */
+let applyingExternal=false;   // 외부 반영 중엔 emitCust 억제 → 에코 루프 차단
+function fmtPhoneOut(v){ let d=digits(v); if(d&&!d.startsWith("010")&&d.length>=8)d="010"+d.slice(-8);
+  return d.length===11?`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`:(v||""); }
+function emitCust(r,op){
+  if(applyingExternal) return;
+  if(!r||!r.phone) return;
+  try{ if(window.parent && window.parent!==window)
+    window.parent.postMessage({ type:"tmcrm:cust", op:op||"upsert",
+      phone:r.phone, name:r.name||"", status:r.status||"신규",
+      grade:r.grade||"", nextCall:r.nextCall||"", memo:r.memo||"", source:r.source||"", crmId:r.crmId||null,
+      caller:r.caller||"", counselor:r.counselor||"" }, "*"); }catch(e){}
+}
+let __emitTimer=null,__emitPend=null;
+function emitCustDebounced(r,op){ __emitPend={r,op}; if(__emitTimer)clearTimeout(__emitTimer);
+  __emitTimer=setTimeout(()=>{ if(__emitPend) emitCust(__emitPend.r,__emitPend.op); __emitPend=null; },600); }
+/* 부모(고객 목록/CRM)에서 온 고객 변경을 이 화면에 반영 */
+function applyCustFromParent(m){
+  if(!m||!m.phone) return;
+  const dn=digits(m.phone); if(!dn) return;
+  // 🆕 P3) '거부'·'차단요청' 상태는 폐지 — CRM 미러에서 와도 상태 변경으로는 반영하지 않음
+  if(m.status==="거부"||m.status==="차단요청") m.status="";
+  applyingExternal=true;
+  try{
+    let r=state.customers.find(c=>digits(c.phone)===dn);
+    let ai=-1;
+    if(!r){ ai=state.archive.findIndex(c=>digits(c.phone)===dn); if(ai>=0) r=state.archive[ai]; }
+    if(m.op==="remove"){
+      if(r && ai<0){ const ci=state.customers.indexOf(r); if(ci>=0){ state.customers.splice(ci,1); state.archive.push(r); } }
+      save(); renderAll(); return;
+    }
+    if(!r){ if(optoutHas(dn)) return;   // 🆕 P3) 수신거부 이력 번호는 미러 경유로도 재등록 금지
+      r=normalizeRec({phone:fmtPhoneOut(m.phone),name:m.name||"",status:m.status||"신규",createdAt:new Date().toISOString()}); state.customers.unshift(r); }
+    else if(ai>=0){ state.archive.splice(ai,1); state.customers.unshift(r); }   // 보관돼 있던 고객 복귀
+    if(m.name) r.name=m.name;
+    if(m.status) r.status=m.status;
+    if(m.grade!=null && m.grade!=="") r.grade=m.grade;
+    if(m.nextCall!=null) r.nextCall=m.nextCall;
+    if(m.source!=null && m.source!=="") r.source=m.source;
+    if(m.caller!=null && m.caller!=="") r.caller=m.caller;               // 🆕 F4: 귀속(콜러) 왕복 보존
+    if(m.counselor!=null && m.counselor!=="") r.counselor=m.counselor;   // 🆕 F4: 귀속(상담자) 왕복 보존
+    if(m.memo!=null && m.memo!=="") r.memo = r.memo ? (m.memo+"\n"+r.memo) : m.memo;   // CRM 새 메모 → 앞에 붙임
+    save(); renderAll();
+  } finally { applyingExternal=false; }
+}
+/* 백필: 부모가 요청하면 현재 전체 고객을 넘김 / 부모가 준 누락 고객을 받아 추가 */
+function replyAllCust(src){
+  const map=r=>({phone:r.phone,name:r.name||"",status:r.status||"신규",grade:r.grade||"",nextCall:r.nextCall||"",memo:r.memo||"",source:r.source||"",createdAt:r.createdAt||"",crmId:r.crmId||null,caller:r.caller||"",counselor:r.counselor||""});
+  const payload={type:"tmcrm:all",active:state.customers.map(map),archived:state.archive.map(map)};
+  try{ src&&src.postMessage(payload,"*"); }catch(e){}
+  try{ if(window.parent&&window.parent!==window) window.parent.postMessage(payload,"*"); }catch(e){}
+}
+/* 👥 발신 패널 '고객 불러오기': 부모가 요청하면 현재 활성 고객 전체를 필요한 필드만 담아 넘긴다.
+   (백필용 replyAllCust 와 달리 bujeCount·lastCallAt 등 필터에 쓰는 필드까지 포함) */
+function replyFullCust(src){
+  const map=r=>({phone:r.phone,name:r.name||"",status:r.status||"신규",grade:r.grade||"",
+    bujeCount:r.bujeCount||0,lastCall:r.lastCall||"",lastCallAt:r.lastCallAt||"",
+    nextCall:r.nextCall||"",nextCallTime:r.nextCallTime||"",memo:r.memo||"",source:r.source||"",createdAt:r.createdAt||"",crmId:r.crmId||null,
+    caller:r.caller||"",counselor:r.counselor||"",
+    srcPath:r.srcPath||"",srcDate:r.srcDate||"",srcConsent:r.srcConsent||"",consentAt:r.consentAt||"",   // 🆕 P1/P6) 발신 화면 출처·동의 표시용
+    srcState:r.srcState||"",optOutAt:r.optOutAt||"",optOutReason:r.optOutReason||"",   // 🆕 P1) 발신 잠금 판정용
+    assignedTo:r.assignedTo||"",poolState:r.poolState||"",prevOwner:r.prevOwner||"",   // 🆕 P5) 공용 풀 발신 차단·이전 담당 표시용
+    prevTouch:r.prevTouch||""});
+  const payload={type:"tmcrm:full",customers:state.customers.map(map)};
+  try{ src&&src.postMessage(payload,"*"); }catch(e){}
+  try{ if(window.parent&&window.parent!==window) window.parent.postMessage(payload,"*"); }catch(e){}
+}
+function applyBackfillCust(items){
+  if(!Array.isArray(items)||!items.length) return;
+  applyingExternal=true;
+  try{
+    const have=new Set(state.customers.concat(state.archive).map(r=>digits(r.phone)));
+    let added=0;
+    items.forEach(it=>{ const dn=digits(it.phone); if(!dn||have.has(dn)) return;
+      if(optoutHas(dn)) return;   // 🆕 P3) 수신거부 이력 번호는 백필로도 재등록 금지
+      const r=normalizeRec({phone:fmtPhoneOut(it.phone),name:it.name||"",status:it.status||"신규",grade:it.grade||"",nextCall:it.nextCall||"",memo:it.memo||"",source:it.source||"",caller:it.caller||"",counselor:it.counselor||"",createdAt:it.createdAt||new Date().toISOString()});
+      state.customers.unshift(r); have.add(dn); added++;
+    });
+    if(added){ save(); renderAll(); }
+  } finally { applyingExternal=false; }
+}
+/* ============================================================
+   🆕 서버 "배정" 연동 (cp_customers ↔ TM 고객관리)
+   - 헤더 「🔄 배정 받기」 클릭 또는 부팅 시 부모가 밀어주는 tmcrm:assign 을 받아 반영.
+   - crmId 로 매칭: 있으면 갱신(상태·메모는 보존), 없으면 신규 생성(doAdd와 같은 방식으로 emitCust 반영).
+   - crmId가 있는데 이번 배정 목록에 없으면(=회수) TM에서도 삭제. crmId 없는(직접 등록) 고객은 그대로 둠.
+   ============================================================ */
+let tmRole="agent";   // 부모가 tmcrm:role 로 알려줌 — master 일 때만 "서버로 보내기" 노출
+function applyAssign(m){
+  if(!m) return;
+  if(m.ok!==true){
+    const ERR={nosession:"로그인 정보가 없습니다. 콜파일럿에 다시 로그인해 주세요.",
+      offline:"인터넷 연결을 확인해 주세요.",
+      expired:"로그인이 만료됐습니다. 다시 로그인해 주세요.",
+      error:"배정 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."};
+    toast(ERR[m.error]||ERR.error);
+    return;
+  }
+  const items=Array.isArray(m.items)?m.items:[];
+  const idSet=new Set(items.map(it=>(it&&it.id!=null)?String(it.id):"").filter(Boolean));
+  let added=0, updated=0, skippedOpt=0;
+  const upserted=[], removedRecs=[];
+  applyingExternal=true;
+  try{
+    items.forEach(it=>{
+      if(!it||!it.phone) return;
+      const dn=digits(it.phone); if(!dn) return;
+      if(optoutHas(dn)){ skippedOpt++; return; }   // 🆕 P3) 수신거부 이력 번호는 배정으로도 재등록 금지
+      // 🆕 출처(source) — 배정 항목에 extra.source 또는 source가 있으면 매핑, 없으면 추측하지 않고 빈 값 유지
+      const srcVal=(it.extra&&it.extra.source)||it.source||"";
+      let r=state.customers.find(c=>digits(c.phone)===dn);
+      if(!r) r=state.archive.find(c=>digits(c.phone)===dn);
+      if(r){
+        r.crmId=it.id;
+        if(!r.name && it.name) r.name=it.name;   // 기존 상태·메모는 절대 건드리지 않음
+        if(!r.source && srcVal) r.source=srcVal;   // 이미 출처가 있으면 덮지 않음
+        updated++;
+      } else {
+        r=normalizeRec({phone:fmtPhoneOut(it.phone),name:it.name||"",status:"신규",
+          grade:it.grade||"",region:it.region||"",source:srcVal,crmId:it.id,createdAt:new Date().toISOString()});
+        state.customers.unshift(r);   // 🔗 doAdd와 같은 방식 — 아래서 emitCust로 CRM 미러 반영
+        added++;
+      }
+      upserted.push(r);
+    });
+    // 회수: crmId가 있는데 이번 배정 목록에 없는 고객 → TM에서도 삭제
+    state.customers=state.customers.filter(r=>{
+      if(r.crmId!=null && !idSet.has(String(r.crmId))){ removedRecs.push(r); return false; }
+      return true;
+    });
+    state.archive=state.archive.filter(r=>{
+      if(r.crmId!=null && !idSet.has(String(r.crmId))){ removedRecs.push(r); return false; }
+      return true;
+    });
+    save();
+  } finally { applyingExternal=false; }
+  renderAll();
+  try{ if(document.getElementById("archiveModal").classList.contains("on")) renderArchive(); }catch(e){}
+  upserted.forEach(r=>emitCust(r,"upsert"));      // 🔗 crmId 포함해 부모 미러(tmcrm_customers)에 반영
+  removedRecs.forEach(r=>emitCust(r,"remove"));
+  const removedNumbers=removedRecs.map(r=>r.phone);
+  try{ if(window.parent&&window.parent!==window)
+    window.parent.postMessage({type:"tmcrm:assign-done", added, updated, removed:removedRecs.length, removedNumbers}, "*"); }catch(e){}
+  toast(`배정 ${added}명 새로 등록 · ${updated}명 갱신 · 회수 ${removedRecs.length}명${skippedOpt?` · 수신거부 이력 ${skippedOpt}명 제외`:""}`);
+}
+/* 부모가 알려주는 내 역할(agent/master) — master 일 때만 "고객 서버로 보내기" 노출 */
+function applyRole(m){
+  tmRole=(m&&m.ok&&m.role==="master")?"master":"agent";
+  // 🔒 마스터 전용 버튼 — 서버로 보내기 + 엑셀/CSV 내보내기(회수 이력·수신거부 대장). 상담사에겐 숨김.
+  var _show = tmRole==="master" ? "" : "none";
+  ["btnUploadServer","btnRecallExport","btnOptoutCopy"].forEach(function(id){
+    var b=document.getElementById(id); if(b) b.style.display=_show;
+  });
+  // 🔒 콜러 자동 스탬프(2026-07-18) — 로그인 계정 이름이 오면 '내 이름'(tmcrm_me)으로 저장하고,
+  //    콜러가 비어있는 고객 전체(보관함 포함)에 채운다. 이미 콜러가 있는 고객은 절대 덮지 않는다.
+  //    「👤 내 이름 설정」 메뉴는 영구 비활성(정적 display:none) — 콜러 이름의 출처는 로그인 계정뿐.
+  //    (오프라인 부팅 등으로 계정 이름이 안 오면 tmcrm_me에 남은 지난 로그인 이름을 그대로 쓴다)
+  const acct=(m&&m.ok&&m.name)?String(m.name).trim():"";
+  if(acct){
+    saveMyName(acct);
+    let stamped=0;
+    state.customers.concat(state.archive).forEach(r=>{ if(!r.caller){ r.caller=acct; stamped++; } });
+    // 미러(emitCust) 일괄 발신은 생략 — 수백 건 postMessage 폭주 방지. 각 고객의 다음 upsert 때 자연 전파됨.
+    if(stamped){ save(); renderAll(); }
+  }
+}
+/* 🔠 글씨 크기 — TM 자체 설정(localStorage에 저장). 0.8~1.5, 기본 1.
+   ⚙️ 관리 메뉴의 슬라이더가 saveFontScale()을 호출해 즉시 적용+저장(미리보기 겸)한다. */
+const FONT_KEY="tmcrm_fontScale";
+function applyFontScale(scale){
+  let n=parseFloat(scale); if(isNaN(n)) n=1;
+  n=Math.min(1.5,Math.max(0.8,n));
+  document.body.style.zoom = (n===1) ? "" : String(n);
+  return n;
+}
+function hasFontScale(){ try{ return localStorage.getItem(FONT_KEY)!=null; }catch(e){ return false; } }
+function loadFontScale(){
+  let n=1;
+  try{ const v=localStorage.getItem(FONT_KEY); if(v!=null){ n=parseFloat(v); if(isNaN(n)) n=1; } }catch(e){}
+  return Math.min(1.5,Math.max(0.8,n));
+}
+function saveFontScale(scale){
+  const n=applyFontScale(scale);
+  try{ localStorage.setItem(FONT_KEY,String(n)); }catch(e){}
+  return n;
+}
+function initFontScale(){ applyFontScale(loadFontScale()); }
+/* 👤 내 이름(콜러 기본값) — TM 자체 설정(localStorage). ⚙️ 관리 → 「내 이름 설정」에서 저장하고,
+   신규 고객 추가·발신 연동(applyOne) 자동 스탬프의 기본값으로 쓴다. */
+const ME_KEY="tmcrm_me";
+function loadMyName(){ try{ return localStorage.getItem(ME_KEY)||""; }catch(e){ return ""; } }
+function saveMyName(name){ try{ localStorage.setItem(ME_KEY,(name||"").trim()); }catch(e){} }
+/* 마스터 전용 "고객 서버로 보내기" 결과 회신 */
+function applyUploadDone(m){
+  if(!m) return;
+  if(m.ok===false){ toast("서버로 보내기 실패"+(m.error?(" · "+m.error):"")); return; }
+  toast(`서버로 ${m.added||0}명 보냄 · 중복 ${m.skipped||0}명 건너뜀`);
+}
+function callbackState(r){
+  if(OUT_OF_QUEUE.has(r.status)) return {k:"out"};
+  if(!r.nextCall) return {k:"new",cls:"new",lab:"신규"};
+  const t=todayStr();
+  if(r.nextCall<t) return {k:"past",cls:"past",lab:"지남"};
+  if(r.nextCall===t) return {k:"today",cls:"today",lab:"오늘"};
+  return {k:"soon",cls:"soon",lab:"예정"};
+}
+const URGENCY={past:0,today:1,soon:2,new:3};
+function inQueue(r){return !OUT_OF_QUEUE.has(r.status) && !isNoCall(r) && !isPooled(r);}   // 🆕 P1) 격리·발신금지 · 🆕 P5) 회수돼 공용 풀에 있는 고객은 콜 큐에서 제외
+/* 🆕 F2) 콜 큐 우선순위: ①콜백 긴급도(지남>오늘>예정>신규) ②동순위 내 등급(A>B>C>D>없음) 타이브레이크
+   ③그다음 다음연락일 오름차순 — 엑셀 TM_고객관리시스템 정렬 규칙과 동일 */
+function queue(){
+  return state.customers.filter(inQueue).map(r=>({r,cb:callbackState(r)}))
+    .sort((a,b)=>{
+      const u=URGENCY[a.cb.k]-URGENCY[b.cb.k]; if(u) return u;                              // ①콜백 긴급도
+      const g=GRADE_ORDER[a.r.grade]-GRADE_ORDER[b.r.grade]; if(g) return g;                 // ②등급 타이브레이크
+      return ((a.r.nextCall||"9999")+" "+(a.r.nextCallTime||"99:99"))
+        .localeCompare((b.r.nextCall||"9999")+" "+(b.r.nextCallTime||"99:99"));              // ③다음연락일+콜백시각 오름차순 (🆕 P3: 시각 지정이 앞으로)
+    });
+}
+/* auto grade like the excel formula: 부재→D shown as badge */
+function gradeShown(r){ if(r.status==="부재"||r.status==="연속부재") return r.grade||"D"; return r.grade||""; }
+
+/* ---------- storage ---------- */
+/* 🔗 내구화 미러(재설치 생존): localStorage 저장과 별개로 부모(콜파일럿)에 전체 스냅샷을
+   postMessage 로 보내 electron-store 에도 백업한다. localStorage는 그대로 작업 캐시로 유지. */
+let __persistMirrorTimer=null;
+function schedulePersistMirror(){
+  if(__persistMirrorTimer) clearTimeout(__persistMirrorTimer);
+  __persistMirrorTimer=setTimeout(()=>{
+    __persistMirrorTimer=null;
+    try{ if(window.parent && window.parent!==window)
+      // 🆕 P5) 회수 이력·설정도 함께 백업(부모 store는 통째로 보관하므로 키 추가는 하위호환)
+      window.parent.postMessage({type:"tmcrm:persist", data:{customers:state.customers, archive:state.archive, optout:optoutLedger,
+        recallLog:recallLog, recallCfg:recallCfg}}, "*"); }
+    catch(e){}
+  }, 800);
+}
+/* 🔗 내구화 복원: localStorage가 비어있을 때(재설치/초기화 직후) 부모의 store 백업을 요청 */
+function requestRestore(){
+  try{ if(window.parent && window.parent!==window)
+    window.parent.postMessage({type:"tmcrm:req-store"}, "*"); }catch(e){}
+}
+/* 부모로부터 온 store 백업을 반영. localStorage 에 이미 데이터가 쓰였으면(그 사이 사용 시작) 덮어쓰지 않음 */
+function applyRestore(data){
+  let already=null;
+  try{ already=localStorage.getItem(KEY); }catch(e){}
+  if(already) return;   // 이미 이 세션에서 localStorage에 데이터가 생겼음 → 복원본으로 덮어쓰지 않음
+  if(!data) return;
+  const cust=Array.isArray(data.customers)?data.customers:[];
+  const arch=Array.isArray(data.archive)?data.archive:[];
+  // 🆕 P3) 수신거부 대장 복원 — 로컬 대장이 비어있을 때만 store 백업으로 시드
+  if(!optoutLedger.length && Array.isArray(data.optout) && data.optout.length){ optoutLedger=data.optout; saveOptout(); }
+  // 🆕 P5) 회수 이력·설정 복원 — 로컬이 비어있을 때만 store 백업으로 시드(진행 중인 로컬 기록을 덮지 않음)
+  if(!recallLog.length && Array.isArray(data.recallLog) && data.recallLog.length){ recallLog=data.recallLog; saveRecallLog(); }
+  if(data.recallCfg && typeof data.recallCfg==="object"){ try{ if(localStorage.getItem(RECALL_CFG_KEY)==null){ recallCfg={...RECALL_DEFAULT,...data.recallCfg}; saveRecallCfg(); } }catch(e){} }
+  if(!cust.length && !arch.length) return;   // store 에도 백업이 없음(진짜 신규 설치) → 현재 상태 유지
+  applyingExternal=true;
+  try{
+    state.customers=cust.map(r=>({...normalizeRec(r),uid:uidSeq++}));
+    state.archive=arch.map(r=>({...normalizeRec(r),uid:uidSeq++}));
+    save();
+    renderAll();
+  } finally { applyingExternal=false; }
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify({customers:state.customers,archive:state.archive}));
+    saveMode="local"; }
+  catch(e){ saveMode="memory"; }
+  schedulePersistMirror();
+  pushConsentMirror();   // ✅ P6) 수신동의 체크 목록 → 발신 패널 미러
+  paintSaveDot();
+}
+function paintSaveDot(){
+  const dot=document.getElementById("saveDot"),txt=document.getElementById("saveTxt");
+  if(saveMode==="local"){dot.classList.remove("mem");txt.textContent="자동저장 켜짐";}
+  else{dot.classList.add("mem");txt.textContent="메모리 모드 · 저장 안 됨";}
+}
+function load(){
+  let raw=null;
+  try{ raw=localStorage.getItem(KEY);}catch(e){ saveMode="memory"; }
+  // 🔁 이름 변경(jipsooho→tmcrm) 이전 데이터 이관: 새 키가 비면 옛 키에서 가져와 옮긴다.
+  if(!raw){ try{ const old=localStorage.getItem("jipsooho_tm_v1"); if(old){ raw=old; localStorage.setItem(KEY, old); } }catch(e){} }
+  if(raw){
+    try{const p=JSON.parse(raw);
+      state.customers=(p.customers||[]).map(r=>({...normalizeRec(r),uid:uidSeq++}));
+      state.archive=(p.archive||[]).map(r=>({...normalizeRec(r),uid:uidSeq++}));
+      const t1=backfillCreatedAt(state.customers), t2=backfillCreatedAt(state.archive);
+      if(t1||t2) save();   // 예전 데이터에 등록시각을 한 번 채워 고정
+      // 🔗 내구화 미러: 기존 데이터를 store 에도 백업(최초 실행 시 1회 시드 겸 계속 갱신)
+      schedulePersistMirror();
+      return;
+    }catch(e){}
+  }
+  state.customers=EMBEDDED.map(normalizeRec); state.archive=[];
+  if(backfillCreatedAt(state.customers)) save();
+  // 🔗 내구화 복원: localStorage가 비어있음(재설치/초기화 가능성) → 부모 store 백업 복구 시도
+  requestRestore();
+}
+/* createdAt 없는(예전) 고객에 순서 보존용 시각을 부여.
+   목록 위(=최신)일수록 늦은 시각 → 이후 새로 추가하는 고객이 항상 맨 위/최신이 됨. */
+function backfillCreatedAt(list){
+  if(!list||!list.length) return false;
+  const n=list.length, base=Date.now()-n*60000; let touched=false;
+  for(let i=0;i<n;i++){ if(!list[i].createdAt){ list[i].createdAt=new Date(base+(n-1-i)*60000).toISOString(); touched=true; } }
+  return touched;
+}
+
+/* ---------- toast w/ undo ---------- */
+let undoFn=null,toastTimer=null;
+function toast(msg,undo){
+  const t=document.getElementById("toast");
+  t.innerHTML=esc(msg)+(undo?' <button id="undoBtn">되돌리기</button>':"");
+  t.classList.add("on"); undoFn=undo||null;
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("on"),undo?5200:2400);
+  if(undo){document.getElementById("undoBtn").onclick=()=>{undoFn&&undoFn();t.classList.remove("on");};}
+}
+
+/* ---------- render: focus + today ---------- */
+function renderToday(){
+  const q=queue();
+  const f=document.getElementById("focus");
+  if(!q.length){ f.className="focus empty"; f.innerHTML='<div class="ey">콜 큐</div><div style="font-size:18px;font-weight:800;margin-top:8px">전화할 사람이 없습니다 🎉</div><div style="margin-top:6px">다음연락일이 설정된 고객이 여기 올라옵니다.</div>'; }
+  else{
+    const {r,cb}=q[0];
+    f.className="focus";
+    const chips=[];
+    if(r.grade) chips.push(`등급 ${esc(r.grade)}`);
+    if(cb.lab) chips.push(cb.lab==="지남"?`콜백 지남 (${esc(r.nextCall)})`
+      :cb.lab==="오늘"?`오늘 콜백${r.nextCallTime?` ⏰ ${esc(r.nextCallTime)}`:""}`
+      :cb.lab==="예정"?`예정 ${esc(r.nextCall)}${r.nextCallTime?" "+esc(r.nextCallTime):""}`:"신규 접촉");
+    if(r.region) chips.push(esc(r.region));
+    if(r.purpose) chips.push(esc(r.purpose));
+    if(r.lastCall) chips.push(`최근통화 ${esc(r.lastCall)}`);
+    // 🆕 P1) 출처 칩 — "○○를 통해 문의 주셨던 번호입니다"라고 답할 수 있게 항상 표시
+    if(r.srcState==="확인") chips.push(`📌 출처: ${esc(r.source||r.srcPath)}${r.srcConsent?` · ${esc(r.srcConsent)}`:""}`);
+    else chips.push("⚠️ 출처 미분류 — 확인 필요");
+    f.innerHTML=`
+      <div class="ey">지금 전화할 사람 · 큐 ${q.length}명</div>
+      <div class="who"><span class="ph mono">${esc(r.phone)}</span><span class="nm">${esc(r.name||"이름 미입력")}</span></div>
+      <div class="meta">${chips.map(c=>`<span class="chip">${c}</span>`).join("")}</div>
+      ${r.memo?`<div class="memo">${esc(r.memo)}</div>`:""}
+      <div class="acts">
+        <a class="call" href="tel:${digits(r.phone)}" onclick="stampCall(${r.uid})">📞 전화걸기</a>
+        <button class="b-copy" onclick="copyPhone('${r.phone}',this)">번호 복사</button>
+        <button class="b-gamang" onclick="logResult(${r.uid},'가망')">가망</button>
+        <button class="b-buje" onclick="logResult(${r.uid},'부재')">부재</button>
+        <button class="b-nointerest" onclick="logResult(${r.uid},'관심없음')" title="'지금은 관심 없다'는 고객 — DB는 유지하고 90일 뒤 다시 연락 대상이 됩니다 (수신거부 아님)">관심없음</button>
+        <button class="b-dead" onclick="logResult(${r.uid},'결번')" title="없는 번호·정지된 번호·팩스/기계음 — 다시 걸어도 연결되지 않으므로 콜 큐에서 영구 제외합니다 (DB에는 남아 출처별 결번율 집계에 쓰입니다)">결번</button>
+        <button class="b-consent${r.consentAt?" on":""}" onclick="logConsent(${r.uid})" title="${r.consentAt?`수신동의 받은 고객 (${esc(fmtStamp(r.consentAt))}) · 다시 누르면 해제`:"통화 중 '앞으로 안내 연락 동의'를 받으면 누르세요 — 이 고객에 ✓ 표시가 저장됩니다"}">${r.consentAt?"☑ 수신동의됨":"✅ 수신동의"}</button>
+        <button class="b-legal" onclick="logLegal(${r.uid})" title="수신거부 요청 — 고객 발언(사유)을 적으면 DB 파기 + 재발신 방지 등록. 누른 사람·시각이 대장에 남습니다">⛔ 수신거부</button>
+      </div>`;
+  }
+  // strip
+  const t=todayStr();
+  const past=state.customers.filter(r=>inQueue(r)&&r.nextCall&&r.nextCall<t).length;
+  const tod=state.customers.filter(r=>inQueue(r)&&r.nextCall===t).length;
+  const calledToday=state.customers.filter(r=>r.lastCall===t).length;
+  document.getElementById("todayStrip").innerHTML=`
+    ${statBox("🔴 놓친 콜백",past,"red")}
+    ${statBox("🟡 오늘 콜백",tod,"amber")}
+    ${statBox("📞 오늘 통화",calledToday,"")}
+    ${statBox("큐 대기 인원",q.length,"green")}`;
+  // queue table
+  const rows=q.slice(0,300).map(({r,cb},i)=>`
+    <tr data-uid="${r.uid}" style="cursor:pointer" title="클릭하면 고객 DB에서 이 고객을 바로 수정합니다">
+      <td class="mono" style="color:var(--muted)">${i+1}</td>
+      <td class="ph-cell">${esc(r.phone)}</td>
+      <td class="left">${esc(r.name)||'<span style="color:#bbb">–</span>'}</td>
+      <td>${r.grade?`<span class="cb new">${esc(r.grade)}</span>`:""}</td>
+      <td><span class="cb ${cb.cls}">${cb.lab}</span></td>
+      <td class="mono">${r.nextCall?esc(r.nextCall)+(r.nextCallTime?" "+esc(r.nextCallTime):""):"—"}</td>
+      <td class="left" style="max-width:360px;color:var(--muted)">${esc((r.memo||"").slice(0,80))}</td>
+      <td style="white-space:nowrap"><a class="callmini" href="tel:${digits(r.phone)}" onclick="stampCall(${r.uid})">전화</a> <button class="copybtn" title="이 고객 수정">✏️</button></td>
+    </tr>`).join("");
+  document.getElementById("queueTable").innerHTML=
+    `<thead><tr><th>#</th><th>연락처</th><th>고객명</th><th>등급</th><th>콜백</th><th>다음연락일</th><th>메모</th><th></th></tr></thead><tbody>${rows||emptyRow(8)}</tbody>`;
+  document.getElementById("queueCount").textContent=`${q.length}명 대기`;
+  renderRecallNotice();   // 🆕 P5) 회수 예정 통지
+}
+/* 🆕 P5) 회수 예정 통지 — 회수 M일 전부터 오늘 콜 화면에 뜬다.
+   ⚖️ 문구는 '보유 정리 안내'다. 재촉·경고가 아니라 "지금 진행 중이면 눌러서 보류하라"는 자율 선택지를 준다. */
+function renderRecallNotice(){
+  const box=document.getElementById("recallNotice"); if(!box) return;
+  if(!recallCfg.enabled){ box.innerHTML=""; return; }
+  const soon=state.customers.map(r=>({r,st:recallStatus(r)})).filter(x=>x.st.k==="soon")
+    .sort((a,b)=>a.st.left-b.st.left);
+  const pooled=state.customers.filter(isPooled).length;
+  if(!soon.length && !pooled){ box.innerHTML=""; return; }
+  const rows=soon.slice(0,8).map(({r,st})=>`
+    <div class="rc-row">
+      <span class="ph mono">${esc(r.phone)}</span>
+      <span style="color:var(--muted)">${esc(r.name)||"이름 미입력"}</span>
+      <span class="rc-cell rc-soon">D-${st.left} · 최종 접촉 ${st.days}일 전</span>
+      <span style="flex:1"></span>
+      <button class="rc-btn go" onclick="recallHold(${r.uid})" title="지금 진행 중인 고객이면 눌러 두세요 — 보유 정리가 ${recallCfg.holdDays}일 미뤄집니다 (최종 접촉일은 바뀌지 않습니다)">진행 중</button>
+      <button class="rc-btn" onclick="editFromQueue(${r.uid})">고객 열기</button>
+    </div>`).join("");
+  box.innerHTML=`
+    <div class="rc-notice">
+      <div class="rc-h">🗂 보유 정리 예정 ${soon.length}건${pooled?` · 공용 풀 ${pooled}건`:""}</div>
+      <div class="rc-s">최종 접촉 후 ${recallCfg.days}일이 지난 고객 DB는 회사 공용 풀로 되돌아갑니다.
+        개인정보를 수집 목적 범위 안에서만 보유하기 위한 자산 정리이며, 상담 이력과 메모는 그대로 보존됩니다.
+        지금 진행 중인 고객은 <b style="color:var(--ink)">진행 중</b>을 눌러 ${recallCfg.holdDays}일 보류할 수 있습니다.</div>
+      ${rows}
+      ${soon.length>8?`<div class="rc-s" style="margin:8px 0 0">외 ${soon.length-8}건 — ⚙️ 관리 → 🗂 미접촉 자산 회수에서 전체를 봅니다.</div>`:""}
+      ${pooled?`<div class="rc-row"><span style="color:var(--muted);font-size:12.5px">공용 풀로 정리된 ${pooled}건은 관리자 승인 후 다시 배분됩니다.</span><span style="flex:1"></span><button class="rc-btn" onclick="openRecall('pool')">공용 풀 보기</button></div>`:""}
+    </div>`;
+}
+/* 🟢 '진행 중' — 회수 보류. 최종 접촉일은 절대 갱신하지 않고 보류 플래그·일시만 남긴다
+   (접촉하지 않았는데 접촉한 것처럼 기록되면 그 자체가 개인정보 보유 근거를 왜곡하기 때문). */
+window.recallHold=function(uid){
+  const r=byId(uid); if(!r) return;
+  r.holdUntil=addDays(recallCfg.holdDays); r.holdAt=new Date().toISOString(); r.holdBy=loadMyName();
+  pushSrcLog(r,"보유 연장","상담 진행 중 표시 · "+recallCfg.holdDays+"일 보류 (최종 접촉일 미갱신)");
+  recallLogAdd("보류",r,"진행 중 표시 · "+recallCfg.holdDays+"일 보류 (~"+r.holdUntil+")");
+  save(); renderAll();
+  toast(`🟢 진행 중으로 표시했습니다 — ${r.holdUntil}까지 보유 정리 보류`);
+};
+/* 🙋 재배분 요청 — 공용 풀로 간 건을 다시 맡고 싶을 때. 관리자가 승인해야 실제 배정된다. */
+window.recallRequest=function(uid){
+  const r=byId(uid); if(!r) return;
+  if(!isPooled(r)){ toast("공용 풀에 있는 고객만 재배분을 요청할 수 있습니다"); return; }
+  const ex=recallExempt(r); if(ex){ toast("🔒 재배분 제외 대상입니다 ("+ex+")"); return; }
+  r.reassignReq=new Date().toISOString(); r.reassignBy=loadMyName()||"(이름 미설정)";
+  pushSrcLog(r,"재배분 요청",r.reassignBy);
+  recallLogAdd("재배분 요청",r,"상담사 요청 · "+r.reassignBy);
+  save(); renderAll(); if(document.getElementById("recallModal").classList.contains("on")) renderRecall();
+  toast("🙋 재배분을 요청했습니다 — 관리자 승인 후 배정됩니다");
+};
+function statBox(lab,num,cls){return `<div class="stat ${cls}"><div class="lab">${lab}</div><div class="num">${num}</div></div>`;}
+function emptyRow(c){return `<tr><td colspan="${c}" class="empty-note">해당 데이터가 없습니다.</td></tr>`;}
+
+/* ---------- actions ---------- */
+window.stampCall=function(uid){const r=byId(uid);if(r){r.lastCall=todayStr();r.lastCallAt=new Date().toISOString();save();renderAll();}};
+window.logResult=function(uid,status){
+  const r=byId(uid); if(!r)return;
+  applyBujeCount(r,status);
+  r.status=status; r.lastCall=todayStr(); r.lastCallAt=new Date().toISOString();   // 통화(상태변경) 시점 = 최근통화. 다음연락일은 직접 지정
+  applyResultCadence(r,status);   // 🆕 F1: 다음연락일이 비어있으면 상태별 SCHEDULE→등급 케이던스 순으로 폴백 채움
+  save(); renderAll();
+  emitCust(r,"upsert");   // 🔗 상태 변경 → 고객 목록 반영
+  toast(`${r.phone} → ${status} 처리`);
+};
+function byId(uid){return state.customers.find(r=>r.uid===uid)||state.archive.find(r=>r.uid===uid);}
+
+/* ============================================================
+   🆕 P1) DB 출처 관리 — 개인정보보호법 제20조(수집 출처 고지) 대응
+   · logLegal: 수신거부 → 사유(고객 발언) 입력 후 대장 기록 + DB 파기
+   · openSrcModal: 수집 경로·일자·동의·증빙 편집 + 확인/격리/해제 + 로그 열람
+   · renderSrcAudit: 출처 미기재 고객 일괄 분류 (⚙️ 관리 → 📋 DB 출처 관리)
+   ============================================================ */
+/* 🆕 P4) 수신거부 사유(고객 발언) 입력 — 발신 화면과 동일 정책. 5자 이상 필수, 빠른 선택 칩 제공.
+   출처민원 버튼은 폐지되고 '내 번호 어떻게 알았냐 항의'가 사유 선택지로 흡수됐다. */
+const OPTOUT_REASONS=["전화하지 말라고 하심","관심 없다고 하심","내 번호 어떻게 알았냐고 항의하심","이미 계약했다고 하심","다시 걸면 신고한다고 하심","통화 중 강하게 화내며 끊으심"];
+/* 🆕 TM 화면엔 통화 타이머가 없다 → 이 고객의 callLog(발신 연동으로 쌓인 통화기록)에서 **최근 3시간 내**
+   통화의 길이(dur)를 찾아 감사용 통화시간으로 쓴다. 없으면 null = '통화 없음' 플래그가 정상 발동. */
+const RECENT_CALL_WINDOW_MS=3*60*60*1000;
+function recentCallSec(r){
+  if(!r||!Array.isArray(r.callLog)||!r.callLog.length) return null;
+  const now=Date.now();
+  for(let i=r.callLog.length-1;i>=0;i--){
+    const c=r.callLog[i]; if(!c) continue;
+    const t=typeof c.ts==="number"?c.ts:Date.parse(c.ts||"");
+    if(!t||isNaN(t)) continue;
+    if(now-t>RECENT_CALL_WINDOW_MS) break;   // 오래된 통화 → 이번 클릭과 무관
+    if(c.dur!=null) return c.dur;
+  }
+  return null;
+}
+window.logLegal=function(uid){
+  const r=byId(uid); if(!r) return;
+  const modal=document.getElementById("optoutModal"), body=document.getElementById("optoutBody");
+  body.innerHTML=`
+    <div style="font-size:13px;color:var(--muted);line-height:1.6">
+      <b style="color:var(--ink)">${esc(r.phone)}${r.name?` (${esc(r.name)})`:""}</b> 고객을 <b style="color:var(--danger)">DB에서 파기</b>하고
+      재발신 방지 목록에 올립니다. 되돌릴 수 없고, <b style="color:var(--ink)">누가·언제·왜</b> 눌렀는지 기록됩니다.</div>
+    <div style="margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--bg-0);border:1px solid var(--line);font-size:12px;line-height:1.65">
+      <div style="color:var(--danger);font-weight:800;margin-bottom:4px">이럴 때만 수신거부</div>
+      <div style="color:var(--muted)">"다시는 전화하지 마세요" · "번호 어떻게 알았냐" 항의 · "신고하겠다" — <b style="color:var(--ink)">연락 자체를 거부</b></div>
+      <div style="color:var(--ok);font-weight:800;margin:8px 0 4px">이건 수신거부 아님 → 상태를 [관심없음]으로</div>
+      <div style="color:var(--muted)">"지금은 관심 없어요" · "바빠요" · 그냥 끊음 — <b style="color:var(--ink)">나중에 다시 걸 수 있는 고객</b>입니다. 수신거부로 누르면 DB가 사라집니다.</div>
+    </div>
+    <div style="font-size:12.5px;font-weight:800;color:var(--gold);margin:15px 0 7px">빠른 선택</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px" id="ooChips">
+      ${OPTOUT_REASONS.map(x=>`<button class="btn oo-chip" data-r="${esc(x)}" style="font-size:12px;padding:6px 10px">${esc(x)}</button>`).join("")}
+    </div>
+    <div style="font-size:12.5px;font-weight:800;color:var(--gold);margin:15px 0 7px">고객 발언 · 상황 (필수)</div>
+    <textarea id="ooSaid" rows="3" placeholder="예) 어디서 번호 알았냐고 화내시며 다시 걸지 말라고 하심"
+      style="width:100%;box-sizing:border-box;padding:10px 11px;font-size:13px;font-family:inherit;line-height:1.6;border-radius:9px;border:1px solid var(--line);background:var(--bg-0);color:var(--text-1);resize:vertical"></textarea>
+    <div id="ooHint" style="font-size:11.5px;color:var(--muted);margin-top:6px">5자 이상 적어주세요.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn" id="ooCancel">취소</button>
+      <button class="btn danger" id="ooOk" disabled style="opacity:.5">기록하고 파기</button>
+    </div>`;
+  const ta=document.getElementById("ooSaid"), ok=document.getElementById("ooOk");
+  const sync=()=>{ const good=ta.value.trim().length>=5; ok.disabled=!good; ok.style.opacity=good?"1":".5";
+    document.getElementById("ooHint").textContent=good?"입력 완료 — 기록할 수 있어요.":"5자 이상 적어주세요."; };
+  ta.oninput=sync;
+  body.querySelectorAll(".oo-chip").forEach(b=>b.onclick=()=>{ const v=b.dataset.r;
+    ta.value=ta.value.trim()?(ta.value.trim()+" · "+v):v; sync(); ta.focus(); });
+  document.getElementById("ooCancel").onclick=()=>modal.classList.remove("on");
+  ok.onclick=()=>{
+    const said=ta.value.trim(); if(said.length<5) return;
+    const at=new Date().toISOString();
+    optoutAdd(r,"수신거부","TM 화면 기록 · 즉시 파기",{said:said,src:"TM",callSec:recentCallSec(r)});
+    purgeByDigits(digits(r.phone));
+    save(); renderAll(); emitCust(r,"remove");
+    modal.classList.remove("on");
+    try{ document.getElementById("srcModal").classList.remove("on"); }catch(e){}
+    try{ if(document.getElementById("srcAuditModal").classList.contains("on")) renderSrcAudit(); }catch(e){}
+    try{ if(document.getElementById("optoutLedgerModal").classList.contains("on")) renderOptoutLedger(); }catch(e){}
+    toast(`⛔ 수신거부 기록 · DB 파기 완료 (${fmtStamp(at)} · 재발신 방지 목록 보관)`);
+  };
+  modal.classList.add("on"); refocusParent();
+  setTimeout(()=>{ refocusParent(); try{ ta.focus(); }catch(e){} },80);
+};
+/* 발신금지 해제(오기록 복구용) — 기존 로그는 지우지 않고 '해제' 기록을 추가로 남긴다 */
+window.clearOptOut=function(uid){
+  const r=byId(uid); if(!r||!r.optOutAt) return;
+  if(!confirm("발신금지를 해제합니다.\n(기존 민원/수신거부 기록은 법정 로그에 그대로 남습니다)")) return;
+  pushSrcLog(r,"발신금지 해제",`이전: ${r.optOutReason||""} ${fmtStamp(r.optOutAt)}`);
+  r.optOutAt=""; r.optOutReason="";
+  save(); renderAll(); emitCust(r,"upsert"); openSrcModal(uid);
+  toast("발신금지를 해제했습니다");
+};
+
+/* ✅ P2) 수신동의 원클릭 (TM 화면) — 일시·방식(전화 동의)·상담사(로그인 계정 이름)를 법정 로그에 기록 */
+/* ✅ P6) 수신동의 = 이 고객에 붙는 체크(consentAt). 다시 누르면 해제(오기록 정정) — 토글.
+   메모에는 아무것도 쓰지 않고, 이력은 srcLog(법정 로그)에만 남는다. */
+window.logConsent=function(uid){
+  const r=byId(uid); if(!r) return;
+  const at=new Date().toISOString();
+  const me=loadMyName();
+  if(r.consentAt){
+    if(!confirm(`이 고객의 수신동의 표시를 해제할까요?\n\n${r.phone}${r.name?` (${r.name})`:""}\n동의 일시: ${fmtStamp(r.consentAt)}\n\n(해제 이력은 기록에 남습니다)`)) return;
+    r.consentAt="";
+    pushSrcLog(r,"수신동의 해제","표시 해제"+(me?" · 상담사 "+me:""));
+    save(); renderAll(); emitCust(r,"upsert");
+    try{ if(document.getElementById("srcModal").classList.contains("on")) openSrcModal(uid); }catch(e){}
+    toast("수신동의 표시를 해제했습니다");
+    return;
+  }
+  r.consentAt=at;                                   // 📌 체크 상태(✓ 표시 기준)
+  r.srcConsent="전화 동의"; if(!r.srcDate) r.srcDate=at.slice(0,10);
+  if(!r.srcState && r.srcPath) r.srcState="확인";   // 경로까지 있으면 확인으로 승격
+  pushSrcLog(r,"수신동의","통화 중 구두 동의 · 전화 동의"+(me?" · 상담사 "+me:""));
+  r.lastCall=todayStr(); r.lastCallAt=at;
+  save(); renderAll(); emitCust(r,"upsert");
+  try{ if(document.getElementById("srcModal").classList.contains("on")) openSrcModal(uid); }catch(e){}
+  try{ if(document.getElementById("srcAuditModal").classList.contains("on")) renderSrcAudit(); }catch(e){}
+  toast(`✅ 수신동의 체크 (전화 동의 · ${fmtStamp(at)}${me?` · ${me}`:""})`);
+};
+
+/* ---------- 📋 출처 상세 모달 ---------- */
+const SRC_LOG_ICON={"확인":"🟢","격리":"🚫","격리 해제":"↩️","출처 문의 민원":"🚨","수신거부":"⛔","발신금지 해제":"↩️","수신동의":"✅","증빙 녹음":"🎙","보유 정리":"🗂","보유 연장":"🟢","재배분":"🔁","재배분 요청":"🙋"};
+window.openSrcModal=function(uid){
+  const r=byId(uid); if(!r) return;
+  const body=document.getElementById("srcBody");
+  document.getElementById("srcTitle").textContent=`📋 출처 상세 — ${r.phone}${r.name?` (${r.name})`:""}`;
+  let banner="",bcls="warn";
+  if(r.optOutAt){ bcls="danger"; banner=`⛔ 발신금지 — ${esc(r.optOutReason||"")} (${fmtStamp(r.optOutAt)} 처리)`; }
+  else if(r.srcState==="격리"){ bcls="danger"; banner="🚫 출처불명 격리 — 발신금지 상태입니다. 출처를 확인해 저장하면 해제됩니다."; }
+  else if(r.srcState==="확인"){ bcls="ok"; banner=`🟢 출처 확인됨${r.srcPath?` — ${esc(r.srcPath)}`:""}${r.srcConsent?` · ${esc(r.srcConsent)}`:""}`; }
+  else banner="⚠️ 출처 미분류 — 수집 경로·동의 방식을 확인해 기재하거나, 확인이 안 되면 격리(발신금지)하세요.";
+  const opt=(list,cur)=>`<option value="">선택하세요</option>`+list.map(s=>`<option ${s===cur?"selected":""}>${s}</option>`).join("");
+  const logs=(Array.isArray(r.srcLog)?r.srcLog.slice().reverse():[]);
+  body.innerHTML=`
+    <div class="src-banner ${bcls}">${banner}</div>
+    <div class="src-form" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
+      <div><label>수집 경로 *</label><select id="srcFPath">${opt(SRC_PATHS,r.srcPath)}</select></div>
+      <div><label>세부 채널</label><select id="srcFChan"><option value="">—</option>${SOURCES.map(s=>`<option ${s===r.source?"selected":""}>${s}</option>`).join("")}</select></div>
+      <div><label>수집 일자</label><input type="date" id="srcFDate" value="${esc(r.srcDate)}"></div>
+      <div><label>동의 방식 *</label><select id="srcFConsent">${opt(SRC_CONSENTS,r.srcConsent)}</select></div>
+      <div style="grid-column:1/3"><label>증빙 메모</label><input type="text" id="srcFProof" value="${esc(r.srcProof)}" placeholder="예: 0712 홈페이지 상담신청 폼 · 통화 녹취 있음"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn gold" id="srcSaveOk">💾 출처 확인됨으로 저장</button>
+      ${r.srcState==="격리"
+        ?`<button class="btn" id="srcUnquar">↩️ 격리 해제</button>`
+        :`<button class="btn danger" id="srcQuar">🚫 출처불명 격리 (발신금지)</button>`}
+      ${r.optOutAt?`<button class="btn" id="srcClearOpt">↩️ 발신금지 해제</button>`:""}
+      <span style="flex:1"></span>
+      <button class="btn" id="srcConsentBtn" style="border-color:rgba(52,181,110,${r.consentAt?".9":".5"});color:${r.consentAt?"#9ff0bd":"#7fd8a4"};background:${r.consentAt?"rgba(52,181,110,.22)":"transparent"}" title="${r.consentAt?`수신동의 받음 (${esc(fmtStamp(r.consentAt))}) · 다시 누르면 해제`:"통화 중 구두 수신동의 — 이 고객에 ✓ 표시가 저장됩니다"}">${r.consentAt?"☑ 수신동의됨":"✅ 수신동의"}</button>
+      <button class="btn danger" id="srcLegalRefuse" title="수신거부 요청 — 사유(고객 발언) 입력 후 DB 파기 + 재발신 방지 등록">⛔ 수신거부</button>
+    </div>
+    <div class="src-log">
+      <b style="font-size:12.5px;color:var(--muted)">법정 대응 로그 (${logs.length}건 · 자동 기록, 삭제 불가)</b>
+      ${logs.length?logs.map(l=>`<div class="li"><b>${SRC_LOG_ICON[l.type]||"·"} ${esc(l.type)}</b><span class="mono">${fmtStamp(l.ts)}</span><span>${esc(l.note||"")}</span></div>`).join("")
+        :`<div class="li">기록 없음</div>`}
+    </div>`;
+  const g=id=>document.getElementById(id);
+  const refreshAudit=()=>{ try{ if(document.getElementById("srcAuditModal").classList.contains("on")) renderSrcAudit(); }catch(e){} };
+  g("srcSaveOk").onclick=()=>{
+    const p=g("srcFPath").value, c=g("srcFConsent").value;
+    if(!p||!c){ toast("⚠️ 수집 경로와 동의 방식을 선택해야 '확인'으로 저장할 수 있습니다"); return; }
+    r.srcPath=p; r.source=g("srcFChan").value||r.source; r.srcDate=g("srcFDate").value||todayStr();
+    r.srcConsent=c; r.srcProof=g("srcFProof").value.trim();
+    const was=r.srcState; r.srcState="확인";
+    pushSrcLog(r,"확인",was==="격리"?"격리 해제 후 출처 확인":"출처 상세에서 기재");
+    save(); renderAll(); emitCust(r,"upsert"); openSrcModal(uid); refreshAudit();
+    toast("🟢 출처 확인됨으로 저장했습니다");
+  };
+  const q=g("srcQuar"); if(q) q.onclick=()=>{
+    if(!confirm("이 고객을 '출처불명 격리(발신금지)'로 지정합니다.\n콜 큐에서 제외되고 발신이 잠깁니다.")) return;
+    r.srcState="격리"; pushSrcLog(r,"격리","출처 상세에서 지정");
+    save(); renderAll(); emitCust(r,"upsert"); openSrcModal(uid); refreshAudit();
+    toast("🚫 출처불명 격리 — 발신금지 처리했습니다");
+  };
+  const uq=g("srcUnquar"); if(uq) uq.onclick=()=>{
+    r.srcState=""; pushSrcLog(r,"격리 해제","출처 상세에서 해제(미분류로 복귀)");
+    save(); renderAll(); emitCust(r,"upsert"); openSrcModal(uid); refreshAudit();
+    toast("격리를 해제했습니다 (미분류)");
+  };
+  const co=g("srcClearOpt"); if(co) co.onclick=()=>clearOptOut(uid);
+  const cs=g("srcConsentBtn"); if(cs) cs.onclick=()=>logConsent(uid);
+  g("srcLegalRefuse").onclick=()=>logLegal(uid);
+  document.getElementById("srcModal").classList.add("on"); refocusParent();
+};
+
+/* ============================================================
+   🆕 P4) ⛔ 수신거부 대장 — "직원이 임의로 막 누르는지" 확인하는 감사 화면
+   · 상담사별 건수 + 의심 건수 요약, 전체 내역(사유·통화시간·플래그) 열람, 내역 복사(관리자 보고용)
+   ============================================================ */
+function optoutStats(){
+  const byAgent={};
+  optoutLedger.forEach(o=>{
+    const a=o.agent||"(미상)";
+    if(!byAgent[a]) byAgent[a]={agent:a,total:0,flagged:0,short:0,noSaid:0,last:""};
+    const g=byAgent[a]; g.total++;
+    if(optoutFlags(o).length) g.flagged++;
+    if(o.callSec==null||o.callSec<OPTOUT_SHORT_SEC) g.short++;
+    if(!o.said||o.said.trim().length<5) g.noSaid++;
+    if((o.ts||"")>g.last) g.last=o.ts||"";
+  });
+  return {list:Object.values(byAgent).sort((a,b)=>b.total-a.total)};
+}
+function renderOptoutLedger(){
+  const body=document.getElementById("optoutLedgerBody"); if(!body) return;
+  const {list}=optoutStats();
+  const rows=optoutLedger.slice().sort((a,b)=>String(b.ts||"").localeCompare(String(a.ts||"")));
+  const totalFlag=rows.filter(o=>optoutFlags(o).length).length;
+  body.innerHTML=`
+    <p style="margin:0 0 12px;color:var(--muted);font-size:12.5px;line-height:1.6">
+      수신거부로 <b style="color:var(--ink)">파기된 고객</b> 내역입니다. 삭제할 수 없고, 상담사가 누른 시각·사유(고객 발언)·통화시간이 함께 남습니다.
+      🚩 표시는 <b style="color:var(--danger)">확인이 필요한 건</b>(통화 없음 · 통화 ${OPTOUT_SHORT_SEC}초 미만 · 사유 부실)입니다.</p>
+    <div class="dash" style="margin-bottom:14px">
+      ${dcard("총 수신거부",rows.length,"파기된 고객 수","#8a877d")}
+      ${dcard("🚩 확인 필요",totalFlag,"통화없음·사유부실 등",totalFlag?"#e06146":"#34b56e")}
+      ${dcard("처리 상담사",list.length,"이름 기준","#6b93c4")}
+    </div>
+    <div class="sec"><h2>상담사별 처리 현황</h2><span class="rule"></span></div>
+    <div class="tablewrap"><div class="scroller" style="max-height:30vh"><table>
+      <thead><tr><th class="left">상담사</th><th>총 건수</th><th>🚩 확인 필요</th><th>통화 10초 미만</th><th>사유 부실</th><th>최근 처리</th></tr></thead>
+      <tbody>${list.length?list.map(g=>`<tr>
+        <td class="left"><b>${esc(g.agent)}</b></td>
+        <td class="mono">${g.total}</td>
+        <td class="mono" style="color:${g.flagged?"var(--danger)":"var(--muted)"};font-weight:${g.flagged?800:400}">${g.flagged}</td>
+        <td class="mono" style="color:${g.short?"var(--warn)":"var(--muted)"}">${g.short}</td>
+        <td class="mono" style="color:${g.noSaid?"var(--warn)":"var(--muted)"}">${g.noSaid}</td>
+        <td class="mono" style="color:var(--muted)">${fmtStamp(g.last)}</td></tr>`).join(""):emptyRow(6)}</tbody>
+    </table></div></div>
+    <div class="sec" style="margin-top:14px"><h2>전체 내역 (최근순)</h2><span class="rule"></span><span class="count">${rows.length}건</span></div>
+    <div class="tablewrap"><div class="scroller" style="max-height:34vh"><table>
+      <thead><tr><th>처리일시</th><th class="left">연락처</th><th class="left">상담사</th><th>통화</th><th class="left">고객 발언 · 사유</th><th class="left">확인 필요</th></tr></thead>
+      <tbody>${rows.length?rows.map(o=>{
+        const f=optoutFlags(o);
+        return `<tr style="${f.length?"background:rgba(224,97,70,.08)":""}">
+          <td class="mono" style="white-space:nowrap">${fmtStamp(o.ts)}</td>
+          <td class="ph-cell">${esc(o.phone||o.digits)}</td>
+          <td class="left">${esc(o.agent)||'<span style="color:var(--muted)">(미상)</span>'}</td>
+          <td class="mono" style="color:${(o.callSec==null||o.callSec<OPTOUT_SHORT_SEC)?"var(--warn)":"var(--muted)"};white-space:nowrap">${o.callSec==null?"통화없음":o.callSec+"초"}</td>
+          <td class="left" style="max-width:300px;color:var(--muted)">${esc(o.said||o.reason||"")}${o.note?`<span style="opacity:.6"> · ${esc(o.note)}</span>`:""}</td>
+          <td class="left">${f.length?f.map(x=>`<span class="badge" style="background:#b23a48" title="${esc(x.t)}">🚩 ${esc(x.k)}</span>`).join(" ")
+            :'<span style="color:var(--ok)">정상</span>'}</td>
+        </tr>`;}).join(""):emptyRow(6)}</tbody>
+    </table></div></div>`;
+}
+/* 관리자 보고용 — 대장을 탭 구분 표로 복사(엑셀/메신저 붙여넣기) */
+function copyOptoutLedger(){
+  if(tmRole!=="master"){ toast("대장 복사는 관리자 전용입니다"); return; }   // 🔒 콘솔 우회 차단
+  const head="처리일시\t연락처\t상담사\t통화(초)\t고객발언/사유\t확인필요";
+  const lines=optoutLedger.slice().sort((a,b)=>String(b.ts||"").localeCompare(String(a.ts||""))).map(o=>{
+    const f=optoutFlags(o);
+    return [fmtStamp(o.ts),o.phone||o.digits,o.agent||"(미상)",(o.callSec==null?"":o.callSec),
+      (o.said||o.reason||"").replace(/\s+/g," "),f.map(x=>x.k).join("/")].join("\t");
+  });
+  copyText([head].concat(lines).join("\n"),()=>toast(`대장 ${lines.length}건 복사됨 — 엑셀·메신저에 붙여넣기`));
+}
+
+/* ---------- 📋 DB 출처 관리 (일괄 분류 도구) ---------- */
+let auditFilter="미분류"; const auditSel=new Set();
+function auditKind(r){ if(r.optOutAt) return "발신금지"; if(r.srcState==="격리") return "격리"; if(r.srcState==="확인") return "확인"; return "미분류"; }
+function auditList(){ return auditFilter==="전체"?state.customers:state.customers.filter(r=>auditKind(r)===auditFilter); }
+function renderSrcAudit(){
+  const body=document.getElementById("srcAuditBody"); if(!body) return;
+  const cnt={미분류:0,확인:0,격리:0,발신금지:0};
+  state.customers.forEach(r=>{ cnt[auditKind(r)]++; });
+  const list=auditList();
+  const ids=new Set(list.map(r=>r.uid));
+  Array.from(auditSel).forEach(u=>{ if(!ids.has(u)) auditSel.delete(u); });   // 필터 밖 선택 정리
+  const chip=k=>`<button class="audit-chip ${auditFilter===k?"on":""}" data-k="${k}">${k} ${k==="전체"?state.customers.length:cnt[k]}</button>`;
+  const allOn=list.length&&list.every(r=>auditSel.has(r.uid));
+  body.innerHTML=`
+    <p style="margin:0 0 10px;color:var(--muted);font-size:12.5px;line-height:1.6">
+      출처가 기재되지 않은(미분류) 고객을 확인해 <b style="color:var(--ink)">출처 확인</b> 또는 <b style="color:var(--danger)">출처불명 격리(발신금지)</b>로 정리하세요.
+      격리·발신금지 고객은 콜 큐에서 빠지고 발신이 잠깁니다. (보관함 고객은 여기 안 보입니다)</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${["미분류","격리","발신금지","확인","전체"].map(chip).join("")}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" id="auditAll" ${allOn?"checked":""}> 보이는 고객 전체선택</label>
+      <span style="flex:1"></span>
+      <button class="btn gold" id="auditOkBtn" ${auditSel.size?"":"disabled"}>✅ 출처 확인 일괄 입력 (${auditSel.size})</button>
+      <button class="btn danger" id="auditQuarBtn" ${auditSel.size?"":"disabled"}>🚫 출처불명 격리 (${auditSel.size})</button>
+      <button class="btn" id="auditUnquarBtn" ${auditSel.size?"":"disabled"}>↩️ 격리 해제</button>
+    </div>
+    <div id="auditApplyForm" style="display:none;border:1px solid var(--gold);border-radius:10px;padding:12px;margin-bottom:10px" class="src-form">
+      <b style="font-size:13px;color:var(--gold);display:block;margin-bottom:8px">선택한 ${auditSel.size}명에게 같은 출처를 적용합니다</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px">
+        <div><label>수집 경로 *</label><select id="auditFPath">
+          <option value="">선택하세요</option><option value="__auto">채널 자동 매핑 (전화문의→자발 문의 등)</option>
+          ${SRC_PATHS.map(s=>`<option>${s}</option>`).join("")}</select></div>
+        <div><label>수집 일자</label><input type="date" id="auditFDate"></div>
+        <div><label>동의 방식 *</label><select id="auditFConsent"><option value="">선택하세요</option>${SRC_CONSENTS.map(s=>`<option>${s}</option>`).join("")}</select></div>
+        <div style="grid-column:1/4"><label>증빙 메모</label><input type="text" id="auditFProof" placeholder="예: 2026-05 네이버 광고 리드폼 일괄 수집분 · 폼 기록 보관"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button class="btn" id="auditApplyCancel">취소</button>
+        <button class="btn gold" id="auditApplyGo">적용</button>
+      </div>
+    </div>
+    <div class="tablewrap"><div class="scroller" style="max-height:46vh"><table id="auditTable">
+      <thead><tr><th class="chkcol"></th><th>연락처</th><th>고객명</th><th>상태</th><th>채널</th><th>DB등록일</th><th>출처</th><th></th></tr></thead>
+      <tbody>${list.length?list.map(r=>{
+        const b=srcBadge(r), on=auditSel.has(r.uid);
+        return `<tr data-uid="${r.uid}" class="${isNoCall(r)?"is-nocall":""}">
+          <td class="chkcol"><input type="checkbox" class="auditChk" data-uid="${r.uid}" ${on?"checked":""}></td>
+          <td class="ph-cell">${esc(r.phone)}</td><td class="left">${esc(r.name)||"—"}</td>
+          <td><span class="badge" style="background:${STATUS_COLOR[r.status]||"#666"}">${esc(r.status)}</span></td>
+          <td>${esc(r.source)||"—"}</td><td class="mono" style="color:var(--muted)">${fmtStamp(r.createdAt)}</td>
+          <td><span class="src-cell ${b.cls}" style="cursor:default">${b.ic} ${esc(b.tx)}</span></td>
+          <td><button class="btn" style="padding:4px 9px;font-size:11.5px" onclick="openSrcModal(${r.uid})">상세</button></td>
+        </tr>`;}).join(""):emptyRow(8)}</tbody>
+    </table></div></div>`;
+  body.querySelectorAll(".audit-chip").forEach(c=>c.onclick=()=>{ auditFilter=c.dataset.k; auditSel.clear(); renderSrcAudit(); });
+  body.querySelectorAll(".auditChk").forEach(c=>c.onchange=()=>{ const u=+c.dataset.uid; if(c.checked)auditSel.add(u); else auditSel.delete(u); renderSrcAudit(); });
+  const allBox=document.getElementById("auditAll");
+  if(allBox) allBox.onchange=()=>{ if(allBox.checked) list.forEach(r=>auditSel.add(r.uid)); else auditSel.clear(); renderSrcAudit(); };
+  const selRecs=()=>state.customers.filter(r=>auditSel.has(r.uid));
+  const okBtn=document.getElementById("auditOkBtn");
+  if(okBtn) okBtn.onclick=()=>{ const f=document.getElementById("auditApplyForm");
+    f.style.display=f.style.display==="none"?"":"none";
+    const d=document.getElementById("auditFDate"); if(d&&!d.value) d.value=todayStr(); };
+  const cancelBtn=document.getElementById("auditApplyCancel");
+  if(cancelBtn) cancelBtn.onclick=()=>{ document.getElementById("auditApplyForm").style.display="none"; };
+  const goBtn=document.getElementById("auditApplyGo");
+  if(goBtn) goBtn.onclick=()=>{
+    const p=document.getElementById("auditFPath").value, c=document.getElementById("auditFConsent").value;
+    const d=document.getElementById("auditFDate").value||todayStr(), pf=document.getElementById("auditFProof").value.trim();
+    if(!p||!c){ toast("⚠️ 수집 경로와 동의 방식을 선택하세요"); return; }
+    let n=0,skip=0; const done=[];
+    selRecs().forEach(r=>{
+      const path=(p==="__auto")?(CH2PATH[r.source]||""):p;
+      if(!path){ skip++; return; }   // '채널 자동'인데 채널이 비어 매핑 불가 → 건너뜀(미분류 유지)
+      r.srcPath=path; r.srcDate=d; r.srcConsent=c; if(pf) r.srcProof=pf;
+      r.srcState="확인"; pushSrcLog(r,"확인","일괄 분류 도구"); done.push(r); n++;
+    });
+    if(n){ save(); renderAll(); done.forEach(r=>emitCust(r,"upsert")); }
+    auditSel.clear(); renderSrcAudit();
+    toast(`🟢 ${n}명 출처 확인됨${skip?` · ${skip}명 건너뜀(채널 없음 — 직접 선택 필요)`:""}`);
+  };
+  const quarBtn=document.getElementById("auditQuarBtn");
+  if(quarBtn) quarBtn.onclick=()=>{
+    const rs=selRecs().filter(r=>r.srcState!=="격리"); if(!rs.length){ toast("선택된 고객이 없습니다"); return; }
+    if(!confirm(`${rs.length}명을 '출처불명 격리(발신금지)'로 지정합니다.\n콜 큐에서 제외되고 발신이 잠깁니다.\n(출처가 확인되면 언제든 해제할 수 있습니다)`)) return;
+    rs.forEach(r=>{ r.srcState="격리"; pushSrcLog(r,"격리","일괄 분류 도구"); });
+    save(); renderAll(); rs.forEach(r=>emitCust(r,"upsert"));
+    auditSel.clear(); renderSrcAudit();
+    toast(`🚫 ${rs.length}명 격리(발신금지) 처리했습니다`);
+  };
+  const unqBtn=document.getElementById("auditUnquarBtn");
+  if(unqBtn) unqBtn.onclick=()=>{
+    const rs=selRecs().filter(r=>r.srcState==="격리"); if(!rs.length){ toast("선택 중 격리 상태 고객이 없습니다"); return; }
+    rs.forEach(r=>{ r.srcState=""; pushSrcLog(r,"격리 해제","일괄 분류 도구"); });
+    save(); renderAll(); rs.forEach(r=>emitCust(r,"upsert"));
+    auditSel.clear(); renderSrcAudit();
+    toast(`↩️ ${rs.length}명 격리 해제 (미분류)`);
+  };
+}
+/* ---------- 🗂 미접촉 자산 회수 · 보유 정리 (관리 화면) ---------- */
+let recallTab="soon";
+const RECALL_TABS=[["soon","⏳ 회수 예정"],["pool","📤 공용 풀 (미배분)"],["exempt","🔒 회수 제외"],["log","📜 이력"],["set","⚙️ 설정"]];
+window.openRecall=function(tab){ recallTab=tab||"soon"; renderRecall();
+  document.getElementById("recallModal").classList.add("on"); refocusParent(); };
+function recallListFor(tab){
+  if(tab==="soon") return state.customers.filter(r=>{const k=recallStatus(r).k; return k==="soon"||k==="due"||k==="hold";})
+    .sort((a,b)=>(recallStatus(a).left||0)-(recallStatus(b).left||0));
+  if(tab==="pool") return state.customers.filter(isPooled)
+    .sort((a,b)=>(b.reassignReq||"").localeCompare(a.reassignReq||""));
+  if(tab==="exempt") return state.customers.filter(r=>recallExempt(r));
+  return [];
+}
+function renderRecall(){
+  const body=document.getElementById("recallBody"); if(!body) return;
+  const cnt={soon:recallListFor("soon").length,pool:recallListFor("pool").length,exempt:recallListFor("exempt").length,
+    log:recallLog.length,set:0};
+  const tabs=RECALL_TABS.map(([k,lab])=>`<button class="rc-tab ${recallTab===k?"on":""}" data-t="${k}">${lab}${cnt[k]?" "+cnt[k]:""}</button>`).join("");
+  const intro=`<p style="margin:0 0 10px;color:var(--muted);font-size:12.5px;line-height:1.65">
+    최종 접촉 후 <b style="color:var(--ink)">${recallCfg.days}일</b>이 지난 고객 DB는 담당 배정이 해제되고 회사 공용 풀로 돌아갑니다.
+    개인정보를 <b style="color:var(--ink)">수집 목적 범위 안에서만 보유</b>하기 위한 자산 정리이며(개인정보보호법 제21조 · 위탁계약서 제11조의2 ⑦⑧항),
+    고객 데이터·상담 이력·메모는 <b style="color:var(--ink)">삭제되지 않고 그대로 보존</b>됩니다.
+    수신거부·출처 민원·출처 확인 대상(격리)·계약 진행 건은 회수·재배분에서 항상 제외됩니다.</p>`;
+  body.innerHTML=intro+`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tabs}</div><div id="recallPane"></div>`;
+  body.querySelectorAll(".rc-tab").forEach(t=>t.onclick=()=>{ recallTab=t.dataset.t; renderRecall(); });
+  const pane=document.getElementById("recallPane");
+  if(recallTab==="set") pane.innerHTML=recallSetHtml(); else if(recallTab==="log") pane.innerHTML=recallLogHtml();
+  else pane.innerHTML=recallTableHtml(recallTab);
+  if(recallTab==="set") bindRecallSet();
+  if(recallTab==="pool") bindRecallPool();
+}
+function prevLine(r){
+  if(!r.prevOwner && !r.prevTouch) return '<span style="color:var(--muted)">—</span>';
+  return `<span style="font-size:11.5px">이전 담당 <b>${esc(r.prevOwner)||"—"}</b><br>최종 접촉 ${esc(String(r.prevTouch||"").slice(0,10))||"기록 없음"}</span>`;
+}
+function recallTableHtml(tab){
+  const list=recallListFor(tab);
+  if(!list.length) return `<div class="empty-note" style="padding:24px 0">해당 고객이 없습니다.</div>`;
+  if(tab==="exempt") return `<div class="tablewrap"><div class="scroller" style="max-height:52vh"><table>
+    <thead><tr><th>연락처</th><th>고객명</th><th>상태</th><th>제외 사유</th><th>담당</th><th></th></tr></thead>
+    <tbody>${list.map(r=>`<tr>
+      <td class="ph-cell">${esc(r.phone)}</td><td class="left">${esc(r.name)||"—"}</td>
+      <td><span class="badge" style="background:${STATUS_COLOR[r.status]||"#666"}">${esc(r.status)}</span></td>
+      <td><span class="rc-cell rc-exempt">🔒 ${esc(recallExempt(r))}</span></td>
+      <td class="left">${esc(r.assignedTo)||'<span style="color:var(--muted)">공용 풀</span>'}</td>
+      <td><button class="btn" style="padding:4px 9px;font-size:11.5px" onclick="openSrcModal(${r.uid})">출처 상세</button></td>
+    </tr>`).join("")}</tbody></table></div></div>`;
+  if(tab==="soon") return `<div class="tablewrap"><div class="scroller" style="max-height:52vh"><table>
+    <thead><tr><th>연락처</th><th>고객명</th><th>담당</th><th>최종 접촉</th><th>보유 상태</th><th></th></tr></thead>
+    <tbody>${list.map(r=>{ const st=recallStatus(r); const a=recallAnchor(r);
+      return `<tr>
+      <td class="ph-cell">${esc(r.phone)}</td><td class="left">${esc(r.name)||"—"}</td>
+      <td class="left">${esc(r.assignedTo)||"—"}</td>
+      <td class="mono" style="color:var(--muted)">${esc(String(a).slice(0,10))||"—"}${st.days!=null?` (${st.days}일 전)`:""}</td>
+      <td>${st.k==="hold"?`<span class="rc-cell rc-hold">🟢 진행 중 ~${esc(r.holdUntil)}</span>`
+        :`<span class="rc-cell rc-soon">⏳ ${st.k==="due"?"정리 대상":"D-"+st.left}</span>`}</td>
+      <td style="white-space:nowrap">${st.k==="hold"?"":`<button class="rc-btn go" onclick="recallHold(${r.uid})">진행 중</button> `}
+        <button class="rc-btn" onclick="recallNow(${r.uid})" title="지금 바로 회사 공용 풀로 되돌립니다 (데이터·이력 보존)">지금 정리</button></td>
+    </tr>`;}).join("")}</tbody></table></div></div>`;
+  // pool
+  const staff=staffPool();
+  return `<div class="rc-prev">재배분하면 <b>이전 담당자의 상담 이력과 메모가 그대로 보입니다.</b>
+      중복 접촉과 수수료 귀속 분쟁을 막기 위해 '이전 담당 / 최종 접촉'을 함께 표시합니다.
+      재배분은 <b>출처가 확인된 DB</b>만 가능하며, 마지막 접촉 후 ${recallCfg.minGapDays}일이 지나지 않은 건은 발신 경고가 표시됩니다.</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn gold" id="rcAutoBtn" title="출처가 확인된 공용 풀 고객을 상담사 순번(라운드로빈)으로 나눠 배분합니다">🔁 순번 자동 배분</button>
+      <span style="font-size:12px;color:var(--muted)">상담사 ${staff.length}명 · 요청 ${list.filter(r=>r.reassignReq).length}건</span>
+    </div>
+    <div class="tablewrap"><div class="scroller" style="max-height:48vh"><table>
+    <thead><tr><th>연락처</th><th>고객명</th><th>이전 담당 / 최종 접촉</th><th>출처</th><th>요청</th><th>재배분</th></tr></thead>
+    <tbody>${list.map(r=>{ const ex=recallExempt(r), okSrc=r.srcState==="확인", soon=tooSoonToCall(r);
+      return `<tr>
+      <td class="ph-cell">${esc(r.phone)}</td><td class="left">${esc(r.name)||"—"}</td>
+      <td class="left">${prevLine(r)}${soon?`<br><span class="rc-cell rc-soon" title="마지막 접촉 후 최소 간격(${recallCfg.minGapDays}일) 미경과 — 재배분해도 ${soon}일 뒤에 거는 것이 안전합니다">⚠️ 발신 주의 D-${soon}</span>`:""}</td>
+      <td>${(()=>{const b=srcBadge(r);return `<span class="src-cell ${b.cls}" style="cursor:default">${b.ic} ${esc(b.tx)}</span>`;})()}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${r.reassignReq?`🙋 ${esc(r.reassignBy)}<br>${fmtStamp(r.reassignReq)}`:"—"}</td>
+      <td style="white-space:nowrap">${ex?`<span class="rc-cell rc-exempt">🔒 ${esc(ex)}</span>`
+        :!okSrc?`<span class="rc-cell rc-exempt" title="출처가 확인된 DB만 재배분할 수 있습니다">출처 확인 필요</span>`
+        :`<select class="cell rcTo" data-uid="${r.uid}" style="width:110px"><option value="">담당 선택</option>${staff.map(s=>`<option>${esc(s)}</option>`).join("")}</select>
+           <button class="rc-btn go rcGo" data-uid="${r.uid}">배분</button>`}</td>
+    </tr>`;}).join("")}</tbody></table></div></div>`;
+}
+function bindRecallPool(){
+  const pane=document.getElementById("recallPane"); if(!pane) return;
+  pane.querySelectorAll(".rcGo").forEach(b=>b.onclick=()=>{
+    const uid=+b.dataset.uid, sel=pane.querySelector('.rcTo[data-uid="'+uid+'"]');
+    const err=doReassign(byId(uid),sel?sel.value:"","관리자 수동 배분");
+    if(err){ toast("⚠️ "+err); return; }
+    save(); renderAll(); renderRecall(); toast("🔁 재배분 완료 — 이전 담당·최종 접촉이 함께 표시됩니다");
+  });
+  const auto=document.getElementById("rcAutoBtn");
+  if(auto) auto.onclick=()=>{
+    const staff=staffPool();
+    if(!staff.length){ toast("배분할 상담사 이름이 없습니다"); return; }
+    const targets=recallListFor("pool").filter(r=>!recallExempt(r)&&r.srcState==="확인");
+    if(!targets.length){ toast("자동 배분할 수 있는 건이 없습니다 (출처 확인된 건만 대상)"); return; }
+    if(!confirm(`공용 풀 ${targets.length}건을 상담사 ${staff.length}명에게 순번대로 배분합니다.\n(수신거부·민원·격리·계약 진행 건과 출처 미확인 건은 제외됩니다)`)) return;
+    let i=recallCfg.rrIdx||0, n=0;
+    targets.forEach(r=>{ const to=staff[i%staff.length]; i++; if(!doReassign(r,to,"순번(라운드로빈) 자동 배분")) n++; });
+    recallCfg.rrIdx=i%staff.length; saveRecallCfg();
+    save(); renderAll(); renderRecall(); toast(`🔁 ${n}건 순번 배분 완료`);
+  };
+}
+window.recallNow=function(uid){
+  const r=byId(uid); if(!r) return;
+  const ex=recallExempt(r); if(ex){ toast("🔒 회수 제외 대상입니다 ("+ex+")"); return; }
+  if(!confirm(`${r.phone} 의 담당 배정을 해제하고 회사 공용 풀로 되돌립니다.\n고객 데이터·상담 이력·메모는 그대로 보존됩니다.`)) return;
+  doRecall(r,"관리 화면에서 직접 정리");
+  save(); renderAll(); renderRecall(); toast("🗂 공용 풀로 정리했습니다 (데이터·이력 보존)");
+};
+function recallLogHtml(){
+  const rows=recallLog.slice().reverse().slice(0,500);
+  if(!rows.length) return `<div class="empty-note" style="padding:24px 0">기록된 이력이 없습니다.</div>`;
+  const IC={"회수":"🗂","보류":"🟢","재배분":"🔁","재배분 요청":"🙋"};
+  return `<p style="margin:0 0 9px;color:var(--muted);font-size:12px">회수·보류·재배분 이력은 <b style="color:var(--ink)">삭제되지 않는 추가전용 기록</b>입니다 — 개인정보 보호조치 이행 증빙으로 사용합니다. (최근 500건 표시 · 전체는 내보내기)</p>
+    <div class="tablewrap"><div class="scroller" style="max-height:54vh"><table>
+    <thead><tr><th>일시</th><th>구분</th><th>연락처</th><th>고객명</th><th>담당</th><th>사유·내용</th><th>처리자</th></tr></thead>
+    <tbody>${rows.map(l=>`<tr>
+      <td class="mono" style="color:var(--muted);white-space:nowrap">${fmtStamp(l.ts)}</td>
+      <td style="white-space:nowrap">${IC[l.type]||"·"} ${esc(l.type)}</td>
+      <td class="ph-cell">${esc(l.phone)}</td><td class="left">${esc(l.name)||"—"}</td>
+      <td class="left">${esc(l.to||l.owner)||"—"}</td>
+      <td class="left" style="font-size:11.5px;color:var(--muted)">${esc(l.reason)}</td>
+      <td class="left">${esc(l.by)||"—"}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
+/* 📥 이력 내보내기 — 엑셀에서 바로 열리는 CSV(UTF-8 BOM). 외부 라이브러리 의존 없음. */
+function exportRecallLog(){
+  if(tmRole!=="master"){ toast("이력 내보내기는 관리자 전용입니다"); return; }   // 🔒 콘솔 우회 차단
+  if(!recallLog.length){ toast("내보낼 이력이 없습니다"); return; }
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const head=["일시","구분","연락처","고객명","이전/현재 담당","재배분 대상","사유·내용","처리자"];
+  const lines=[head.map(q).join(",")].concat(recallLog.map(l=>
+    [fmtStamp(l.ts),l.type,l.phone,l.name,l.owner,l.to,l.reason,l.by].map(q).join(",")));
+  try{
+    const blob=new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8;"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="미접촉자산회수_이력_"+todayStr().replace(/-/g,"")+".csv";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    toast("📥 이력 "+recallLog.length+"건을 내려받았습니다");
+  }catch(e){ toast("내보내기에 실패했습니다"); }
+}
+function recallSetHtml(){
+  return `<div class="rc-set" style="max-width:640px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 14px">
+      <div><label>회수 기준일 (최종 접촉 후 N일)</label><input type="number" id="rcDays" min="1" max="365" value="${recallCfg.days}"></div>
+      <div><label>사전 통지일 (회수 M일 전부터 안내)</label><input type="number" id="rcNotify" min="1" max="90" value="${recallCfg.notifyDays}"></div>
+      <div><label>'진행 중' 보류 연장 기간 (일)</label><input type="number" id="rcHold" min="1" max="180" value="${recallCfg.holdDays}"></div>
+      <div><label>재발신 최소 간격 (일 · 경고 표시용)</label><input type="number" id="rcGap" min="0" max="365" value="${recallCfg.minGapDays}"></div>
+      <div><label>재배분 방식</label><select id="rcAuto">
+        <option value="manual" ${recallCfg.autoAssign?"":"selected"}>수동 배분 (관리자가 직접)</option>
+        <option value="auto" ${recallCfg.autoAssign?"selected":""}>순번(라운드로빈) 자동 배분</option></select></div>
+      <div><label>자동 회수</label><select id="rcEnabled">
+        <option value="on" ${recallCfg.enabled?"selected":""}>사용</option>
+        <option value="off" ${recallCfg.enabled?"":"selected"}>중지 (통지만)</option></select></div>
+    </div>
+    <p style="margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.65">
+      ⚖️ 이 설정은 개인정보 보유 기간 관리를 위한 것입니다. 상담사의 활동량을 평가하거나 불이익을 주는 용도로 쓰지 마세요 —
+      위촉 계약의 독립성이 훼손되면 계약 성격에 관한 분쟁으로 이어질 수 있습니다.
+      회수 제외 대상(수신거부·출처 민원·출처 확인 대상·계약 진행)은 설정과 무관하게 항상 보호됩니다.</p>
+    <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:14px">
+      <button class="btn" id="rcSweepBtn" title="지금 기준으로 회수 대상을 즉시 정리합니다">지금 정리 실행</button>
+      <button class="btn gold" id="rcSaveBtn">설정 저장</button></div>`;
+}
+function bindRecallSet(){
+  const g=id=>document.getElementById(id);
+  const sv=g("rcSaveBtn");
+  if(sv) sv.onclick=()=>{
+    const n=(id,d)=>{ const v=parseInt(g(id).value,10); return (isNaN(v)||v<1)?d:v; };
+    recallCfg.days=n("rcDays",RECALL_DEFAULT.days);
+    recallCfg.notifyDays=n("rcNotify",RECALL_DEFAULT.notifyDays);
+    recallCfg.holdDays=n("rcHold",RECALL_DEFAULT.holdDays);
+    const gap=parseInt(g("rcGap").value,10); recallCfg.minGapDays=isNaN(gap)||gap<0?RECALL_DEFAULT.minGapDays:gap;
+    recallCfg.autoAssign=g("rcAuto").value==="auto";
+    recallCfg.enabled=g("rcEnabled").value==="on";
+    if(recallCfg.notifyDays>=recallCfg.days) recallCfg.notifyDays=Math.max(1,recallCfg.days-1);   // 통지일이 기준일 이상이면 전건이 '예정'이 되어버림
+    saveRecallCfg(); renderAll(); renderRecall(); toast("⚙️ 보유 정리 설정을 저장했습니다");
+  };
+  const sw=g("rcSweepBtn");
+  if(sw) sw.onclick=()=>{ const n=runRecallSweep(true); renderRecall();
+    toast(n?`🗂 ${n}건을 공용 풀로 정리했습니다`:"지금 정리할 대상이 없습니다"); };
+}
+/* ✏️ 콜 큐에서 고객을 클릭(또는 ✏️ 버튼)하면 고객 DB 탭으로 전환해 그 자리에서 바로 수정 (기존 편집 UI 재사용) */
+window.editFromQueue=function(uid){
+  const r=byId(uid); if(!r) return;
+  const navBtn=document.querySelector('nav button[data-tab="db"]'); if(navBtn) navBtn.click();
+  const fStatus=document.getElementById("fStatus"), fGrade=document.getElementById("fGrade");
+  if(fStatus) fStatus.value=""; if(fGrade) fGrade.value="";
+  const fsrcEl=document.getElementById("fSrc"); if(fsrcEl) fsrcEl.value="";
+  const fbc=document.getElementById("fBujeCount"); if(fbc) fbc.value="";
+  const fd=document.getElementById("fDate"), bc=document.getElementById("btnDateClear");
+  if(fd){ fd.value=""; if(bc) bc.style.display="none"; }
+  document.getElementById("search").value=r.phone;   // 이 고객만 남도록 검색으로 좁힘
+  renderDB();
+  setTimeout(()=>{
+    const row=document.querySelector('#dbTable tr[data-uid="'+r.uid+'"]');
+    if(!row) return;
+    row.scrollIntoView({block:"center",behavior:"smooth"});
+    row.classList.add("row-flash");
+    setTimeout(()=>row.classList.remove("row-flash"),1600);
+    const nameInput=row.querySelector("input.cell"); if(nameInput) nameInput.focus();
+  },50);
+};
+
+/* 🆕 P3) purgeRefuse(거부 정리) 폐지 — 거부·차단요청은 발생 즉시 자동 파기되므로 정리 대상이 없다 */
+/* 선택 삭제 (체크박스 다중) — 검색·정렬로 고르고 한 번에 보관함으로 */
+function updateDelBtn(){
+  const b=document.getElementById("btnDelSel"); if(!b) return;
+  b.textContent=`🗑 선택 삭제${selected.size?` (${selected.size})`:""}`;
+  b.disabled=!selected.size;
+}
+function delSelected(){
+  const rows=state.customers.filter(r=>selected.has(r.uid));
+  if(!rows.length){ toast("선택된 고객이 없습니다."); return; }
+  if(!confirm(`선택한 ${rows.length}명을 보관함으로 옮깁니다.\n(모든 화면에서 제외되고, 보관함에서 언제든 복구 가능)`))return;
+  const ids=new Set(rows.map(r=>r.uid));
+  state.customers=state.customers.filter(r=>!ids.has(r.uid));
+  state.archive=state.archive.concat(rows);
+  selected.clear();
+  save(); rows.forEach(r=>emitCust(r,"remove")); renderAll(); updateDelBtn();   // 🔗 보관 → 고객 목록에서 제외
+  toast(`${rows.length}명 보관함으로 이동`, ()=>{
+    state.archive=state.archive.filter(a=>!ids.has(a.uid));
+    state.customers=rows.concat(state.customers);
+    save(); rows.forEach(r=>emitCust(r,"upsert")); renderAll();   // 되돌리기 → 고객 목록 복귀
+  });
+}
+window.delRow=function(uid){
+  const idx=state.customers.findIndex(r=>r.uid===uid); if(idx<0)return;
+  const r=state.customers[idx];
+  state.customers.splice(idx,1); state.archive.push(r);
+  save(); emitCust(r,"remove"); renderAll();   // 🔗 보관 → 고객 목록에서 제외
+  toast(`${r.phone} 보관함으로 이동`, ()=>{state.archive=state.archive.filter(a=>a.uid!==uid);state.customers.splice(idx,0,r);save();emitCust(r,"upsert");renderAll();});
+};
+window.restoreRow=function(uid){
+  const idx=state.archive.findIndex(r=>r.uid===uid); if(idx<0)return;
+  const r=state.archive[idx]; state.archive.splice(idx,1); state.customers.push(r);
+  save(); emitCust(r,"upsert"); renderAll(); renderArchive(); toast(`${r.phone} 복구됨`);   // 🔗 복구 → 고객 목록 복귀
+};
+window.hardDel=function(uid){
+  const idx=state.archive.findIndex(r=>r.uid===uid); if(idx<0)return;
+  if(!confirm("이 고객을 완전히 삭제합니다. 복구할 수 없습니다."))return;
+  const r=state.archive[idx];
+  state.archive.splice(idx,1); save(); emitCust(r,"remove"); renderArchive(); renderAll();   // 🔗 완전 삭제 → 고객 목록에서도 제외
+};
+function emptyArchive(){
+  const list=archiveList();
+  const label="보관함";
+  if(!list.length){toast(label+"이 비어 있습니다.");return;}
+  if(!confirm(`${label} ${list.length}명을 완전히 삭제합니다. 복구 불가.`))return;
+  const del=new Set(list.map(r=>r.uid));
+  state.archive=state.archive.filter(r=>!del.has(r.uid));
+  save(); renderArchive(); renderAll(); toast(label+"을 비웠습니다.");
+}
+
+/* ---------- edit cell ---------- */
+let saveTimer=null;
+function debouncedSave(){ if(saveTimer)clearTimeout(saveTimer); saveTimer=setTimeout(save,600); }
+window.editField=function(uid,field,val){
+  const r=byId(uid); if(!r)return;
+  // 🔒 메모·콜러는 UI에서 수정/삭제 금지(2026-07-18) — 메모는 발신 연동·CRM 미러만 쓸 수 있고,
+  //    콜러는 로그인 계정 이름 자동 스탬프(applyRole)만. (자동 반영 경로는 editField를 안 거치므로 영향 없음)
+  if(field==="memo"||field==="caller") return;
+  r[field]=val;
+  if(field==="status"){
+    applyBujeCount(r,val);
+    r.lastCall=todayStr(); r.lastCallAt=new Date().toISOString();   // 상태를 바꾼 시점 = 통화한 시점 → 최근통화(시간까지) 갱신
+    save(); renderToday(); renderDB(); renderDash(); emitCust(r,"upsert"); return;
+  }
+  if(field==="grade"){ applyGradeCadenceFallback(r); save(); renderToday(); renderDB(); renderDash(); emitCust(r,"upsert"); return; }   // 🆕 F1(b): 다음연락일 비어있으면 등급 케이던스로 자동 채움(이미 값 있으면 유지)
+  if(field==="nextCall"){ save(); renderToday(); renderDB(); renderDash(); emitCust(r,"upsert"); return; }
+  if(field==="nextCallTime"){ save(); renderToday(); renderDB(); renderDash(); return; }   // 🆕 P3) 콜백 시각
+  if(field==="source"){ save(); renderToday(); renderDB(); renderDash(); emitCust(r,"upsert"); return; }   // 🆕 F3: DB 출처
+  if(field==="bujeCount"){ r.bujeCount=parseInt(val,10)||0; save(); renderToday(); renderDB(); renderDash(); return; }
+  // name / memo (oninput): keep caret & focus, persist quietly
+  debouncedSave();
+  emitCustDebounced(r,"upsert");   // 🔗 이름·메모 편집 → 고객 목록 반영(디바운스)
+};
+
+/* ---------- render: DB ---------- */
+function statusSelect(r){
+  return `<select class="cell" style="color:${STATUS_COLOR[r.status]||'#333'}" onchange="editField(${r.uid},'status',this.value)">`+
+    STATUSES.map(s=>`<option ${s===r.status?"selected":""}>${s}</option>`).join("")+`</select>`;
+}
+function gradeSelect(r){
+  return `<select class="cell" onchange="editField(${r.uid},'grade',this.value)">`+
+    ["","A","B","C","D"].map(g=>`<option ${g===r.grade?"selected":""}>${g||"—"}</option>`).join("")+`</select>`;
+}
+/* 🆕 F3) DB 출처(채널) — 인라인 셀렉트. P1 이후 DB 표에서는 srcCell(출처 배지→상세 모달)로 대체됐고,
+   채널 편집은 출처 상세 모달의 '세부 채널'에서 한다. (함수는 호환용으로 보존) */
+function sourceSelect(r){
+  return `<select class="cell" onchange="editField(${r.uid},'source',this.value)">`+
+    [""].concat(SOURCES).map(s=>`<option ${s===r.source?"selected":""}>${s||"—"}</option>`).join("")+`</select>`;
+}
+/* 🆕 P1) 출처 셀 — 상태 배지 버튼. 클릭하면 출처 상세(수집 경로·동의·증빙·법정 로그) 모달 */
+function srcBadge(r){
+  if(r.optOutAt) return {ic:"⛔",tx:r.optOutReason||"발신금지",cls:"src-out"};
+  if(r.srcState==="격리") return {ic:"🚫",tx:"격리(발신금지)",cls:"src-quar"};
+  if(r.srcState==="확인") return {ic:"🟢",tx:r.source||r.srcPath||"확인",cls:"src-ok"};
+  return {ic:"⚠️",tx:"미분류",cls:"src-none"};
+}
+function srcCell(r){
+  const b=srcBadge(r);
+  return `<button class="src-cell ${b.cls}" onclick="openSrcModal(${r.uid})" title="출처 상세 — 수집 경로·동의 방식·법정 로그 (클릭해서 확인/편집)">${b.ic} ${esc(b.tx)}</button>`;
+}
+/* 🆕 P5) 보유 셀 — 담당/회수 예정/공용 풀/보류/제외를 한 칸에. 이전 담당·최종 접촉을 title로 노출해
+   재배분된 건의 중복 접촉과 수수료 귀속 분쟁을 예방한다. */
+function recallCell(r){
+  const st=recallStatus(r);
+  const prev=r.prevOwner?` · 이전 담당 ${r.prevOwner}${r.prevTouch?" / 최종 접촉 "+String(r.prevTouch).slice(0,10):""}`:"";
+  if(st.k==="exempt") return `<span class="rc-cell rc-exempt" title="회수 제외 — ${esc(st.reason)}${esc(prev)}">🔒 ${esc(st.reason)}</span>`;
+  if(st.k==="pool") return `<span class="rc-cell rc-pool" title="회사 공용 풀(미배분)${esc(prev)}">📤 공용 풀${r.reassignReq?" · 요청됨":""}</span>`;
+  if(st.k==="hold") return `<span class="rc-cell rc-hold" title="진행 중 보류 — ${esc(r.holdUntil)}까지${esc(prev)}">🟢 진행 중 ~${esc(r.holdUntil)}</span>`;
+  if(st.k==="soon") return `<span class="rc-cell rc-soon" title="보유 정리 예정 — 최종 접촉 ${st.days}일 전${esc(prev)}">⏳ D-${st.left}</span>`;
+  if(st.k==="due") return `<span class="rc-cell rc-soon" title="보유 정리 대상${esc(prev)}">⏳ 정리 대상</span>`;
+  return `<span class="rc-cell" title="담당 ${esc(r.assignedTo)||"미지정"}${esc(prev)}">${esc(r.assignedTo)||"—"}</span>`;
+}
+/* 🆕 F4) 콜러(발굴자)·1차 상담자 — 텍스트 인라인 편집 + <datalist> 자동완성(기존에 입력된 이름 전체에서 수집).
+   상담자는 방문예약/방문완료/계약협의 상태인데 비어있으면 옅은 경고 배경으로 입력을 유도한다(강제 입력 아님). */
+const NEEDS_COUNSELOR=new Set(["방문예약","방문완료","계약협의"]);
+/* 🔒 콜러(2026-07-18) — 로그인 계정 이름이 자동으로 들어가고(applyRole에서 스탬프) 수동 편집 불가.
+   상담자(counselor)만 담당 콜러가 직접 입력한다. */
+function callerCell(r){
+  return `<span class="cell-ro" title="콜러는 로그인 계정 이름으로 자동 입력됩니다 (수정 불가)">${esc(r.caller)||'<span style="color:var(--muted)">—</span>'}</span>`;
+}
+function counselorCell(r){
+  const need=NEEDS_COUNSELOR.has(r.status), warn=need && !r.counselor;
+  return `<input class="cell${warn?' cell-warn':''}" list="staffNames" value="${esc(r.counselor)}" placeholder="상담자"
+    oninput="editField(${r.uid},'counselor',this.value); this.classList.toggle('cell-warn', ${need} && !this.value.trim());">`;
+}
+/* 콜러·상담자 자동완성 목록 — 전체 고객(보관함 포함)의 caller/counselor 유니크 값을 모아 <datalist> 갱신 */
+function refreshStaffNames(){
+  let dl=document.getElementById("staffNames");
+  if(!dl){ dl=document.createElement("datalist"); dl.id="staffNames"; document.body.appendChild(dl); }
+  const names=new Set();
+  state.customers.concat(state.archive).forEach(r=>{ if(r.caller) names.add(r.caller); if(r.counselor) names.add(r.counselor); });
+  dl.innerHTML=Array.from(names).sort((a,b)=>a.localeCompare(b,"ko")).map(n=>`<option value="${esc(n)}">`).join("");
+}
+/* 부재 횟수 직접 선택/수정 — 상태가 부재·연속부재일 때만 노출 */
+function bujeCountSelect(r){
+  const cur=r.bujeCount||0;
+  const opts=[0,1,2,3,4,5,6,7,8,9,10];
+  return `<select class="cell" title="부재 횟수 (직접 수정 가능)" style="width:60px;font-size:11px;margin-left:4px;" onchange="editField(${r.uid},'bujeCount',this.value)">`+
+    opts.map(n=>`<option value="${n}" ${n===cur?"selected":""}>${n}회</option>`).join("")+`</select>`;
+}
+function filteredCustomers(){
+  const term=document.getElementById("search").value.trim().toLowerCase();
+  const fs=document.getElementById("fStatus").value, fg=document.getElementById("fGrade").value;
+  const fbc=document.getElementById("fBujeCount")?document.getElementById("fBujeCount").value:"";
+  const fd=document.getElementById("fDate")?document.getElementById("fDate").value:"";
+  const fsrc=document.getElementById("fSrc")?document.getElementById("fSrc").value:"";   // 🆕 P3) 출처 분류 필터
+  let list=state.customers;
+  if(fs) list=list.filter(r=>r.status===fs);
+  if(fsrc) list=list.filter(r=>auditKind(r)===fsrc);
+  const frc=document.getElementById("fRecall")?document.getElementById("fRecall").value:"";   // 🆕 P5) 보유 상태 필터
+  if(frc){ const want=frc==="soon"?["soon","due"]:[frc]; list=list.filter(r=>want.indexOf(recallStatus(r).k)>=0); }
+  if(fbc){ const n=parseInt(fbc,10); list=list.filter(r=> n>=4 ? (r.bujeCount||0)>=4 : (r.bujeCount||0)===n); }
+  if(fd) list=list.filter(r=>(r.lastCallAt||r.lastCall||"").slice(0,10)===fd);   // 최근통화가 그 날짜인 고객만
+  if(fg) list=list.filter(r=>(r.grade||(r.status==="부재"||r.status==="연속부재"?"D":""))===fg);
+  if(term) list=list.filter(r=>(r.phone+" "+r.name+" "+r.memo+" "+r.region).toLowerCase().includes(term));
+  return sortCustomers(list);
+}
+/* 열 헤더 클릭 정렬 */
+function sortCustomers(list){
+  const arr=list.slice();
+  if(!sortKey){ arr.sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||"")); return arr; }  // 원상태=DB등록일 최신순
+  const val=(r)=>{
+    switch(sortKey){
+      case "phone":    return digits(r.phone);
+      case "name":     return r.name||"";
+      case "status":   return String(STATUSES.indexOf(r.status)).padStart(2,"0");
+      case "grade":    return r.grade||"Z";
+      case "source":   return r.source||"￿";   // 🆕 F3: 미입력은 맨 뒤로
+      // 🆕 P5: 보유 — 정리 임박 순(due→soon→hold→pool→담당중→제외)
+      case "recall":   { const o={due:0,soon:1,hold:2,pool:3,ok:4,exempt:5}, st=recallStatus(r);
+                         return String(o[st.k]==null?9:o[st.k])+String(st.left==null?99:Math.min(99,st.left)).padStart(2,"0"); }
+      case "caller":   return r.caller||"￿";   // 🆕 F4: 미입력은 맨 뒤로
+      case "counselor":return r.counselor||"￿"; // 🆕 F4: 미입력은 맨 뒤로
+      case "callback": { const k=callbackState(r).k; return URGENCY[k]===undefined?9:URGENCY[k]; }
+      case "nextCall": return r.nextCall||"9999-99-99";
+      case "lastCall": return r.lastCallAt||r.lastCall||"";
+      case "createdAt":
+      default:         return r.createdAt||"";
+    }
+  };
+  arr.sort((a,b)=>{ const va=val(a), vb=val(b); if(va<vb) return -sortDir; if(va>vb) return sortDir; return 0; });
+  return arr;
+}
+function sortTh(label,key){
+  const on=sortKey===key, arrow=on?(sortDir<0?" ▼":" ▲"):"";
+  return `<th class="sortable${on?' active':''}" data-sort="${key}">${label}${arrow}</th>`;
+}
+function renderDB(){
+  const sc=document.querySelector("#v-db .scroller"); const sy=sc?sc.scrollTop:0;
+  refreshStaffNames();   // 🆕 F4: 콜러·상담자 자동완성 목록을 최신 상태로 갱신
+  const list=filteredCustomers();
+  lastRendered=list.slice(0,600);
+  const rows=lastRendered.map(r=>{
+    const cb=callbackState(r), on=selected.has(r.uid);
+    return `<tr class="${r.status==='거부'?'is-refuse':''}${isNoCall(r)?' is-nocall':''}${isPooled(r)?' is-pool':''}${on?' rowsel':''}" data-uid="${r.uid}">
+      <td class="chkcol"><input type="checkbox" class="rowchk" data-uid="${r.uid}" ${on?'checked':''}></td>
+      <td class="ph-cell">${r.consentAt?`<span class="consent-v" title="수신동의 받은 번호 · ${esc(fmtStamp(r.consentAt))}">✅</span>`:""}${esc(r.phone)}</td>
+      <td style="min-width:96px"><input class="cell" value="${esc(r.name)}" oninput="editField(${r.uid},'name',this.value)" placeholder="이름"></td>
+      <td style="min-width:112px">${statusSelect(r)}${(r.status==="부재"||r.status==="연속부재")?bujeCountSelect(r):''}</td>
+      <td style="width:70px">${gradeSelect(r)}</td>
+      <td style="width:112px">${srcCell(r)}</td>
+      <td style="width:118px">${recallCell(r)}</td>
+      <td class="left" style="min-width:92px">${callerCell(r)}</td>
+      <td class="left" style="min-width:92px">${counselorCell(r)}</td>
+      <td>${cb.k!=='out'?`<span class="cb ${cb.cls}">${cb.lab}</span>`:''}</td>
+      <td style="width:206px;white-space:nowrap"><input class="cell mono" type="date" value="${esc(r.nextCall)}" onchange="editField(${r.uid},'nextCall',this.value)"><input class="cell mono" type="time" value="${esc(r.nextCallTime)}" title="콜백 시각 (선택) — '저녁 5시에 전화' 약속" style="width:86px;margin-left:3px" onchange="editField(${r.uid},'nextCallTime',this.value)"></td>
+      <td class="mono" style="color:var(--muted);white-space:nowrap">${r.lastCallAt?fmtStamp(r.lastCallAt):(esc(r.lastCall)||"—")}</td>
+      <td class="mono" style="color:var(--muted);white-space:nowrap">${fmtStamp(r.createdAt)}</td>
+      <td class="left" style="min-width:240px"><textarea class="cell memo-ro" rows="1" readonly title="메모는 발신 결과·통화 메모에서 자동 기록됩니다 (개인 수정·삭제 불가)" placeholder="발신 결과 반영 시 자동 기록">${esc(r.memo)}</textarea></td>
+    </tr>`;}).join("");
+  const allOn=lastRendered.length && lastRendered.every(r=>selected.has(r.uid));
+  document.getElementById("dbTable").innerHTML=
+    `<thead><tr>
+       <th class="chkcol"><input type="checkbox" id="chkAll" ${allOn?'checked':''} title="현재 목록 전체 선택"></th>
+       ${sortTh("연락처","phone")}${sortTh("고객명","name")}${sortTh("상태","status")}${sortTh("등급","grade")}${sortTh("출처","source")}${sortTh("보유","recall")}${sortTh("콜러","caller")}${sortTh("상담자","counselor")}${sortTh("콜백","callback")}${sortTh("다음연락일","nextCall")}${sortTh("최근통화","lastCall")}${sortTh("DB등록일","createdAt")}<th>메모</th>
+     </tr></thead><tbody>${rows||emptyRow(14)}</tbody>`;
+  bindDbTable();
+  const shown=Math.min(list.length,600);
+  document.getElementById("dbCount").textContent=`${list.length}명${list.length>600?` (상위 ${shown}명 표시)`:""} · 전체 ${state.customers.length}명`;
+  if(sc) sc.scrollTop=sy;
+  updateDelBtn();
+}
+function bindDbTable(){
+  document.querySelectorAll("#dbTable th.sortable").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.sort;
+    if(sortKey!==k){ sortKey=k; sortDir=1; }   // 1번째: 오름차순 ▲
+    else if(sortDir===1){ sortDir=-1; }        // 2번째: 내림차순 ▼
+    else { sortKey=null; sortDir=1; }          // 3번째: 원상태(기본)로 복귀
+    renderDB();
+  });
+  document.querySelectorAll("#dbTable .rowchk").forEach(cb=>cb.onchange=()=>{
+    const uid=+cb.dataset.uid;
+    if(cb.checked) selected.add(uid); else selected.delete(uid);
+    const tr=cb.closest("tr"); if(tr) tr.classList.toggle("rowsel",cb.checked);
+    const allOn=lastRendered.length && lastRendered.every(r=>selected.has(r.uid));
+    const ca=document.getElementById("chkAll"); if(ca) ca.checked=allOn;
+    updateDelBtn();
+  });
+  const chkAll=document.getElementById("chkAll");
+  if(chkAll) chkAll.onchange=()=>{
+    if(chkAll.checked) lastRendered.forEach(r=>selected.add(r.uid));
+    else lastRendered.forEach(r=>selected.delete(r.uid));
+    renderDB();
+  };
+}
+
+/* ---------- render: dashboard (엑셀 TM고객관리시스템 집계 이식) ---------- */
+const pctI=(a,b)=>b?Math.round(a/b*100):0;
+const pctF=(a,b)=>b?(a/b*100).toFixed(1):"0.0";
+function dashAgg(){
+  const C=state.customers, tot=C.length;
+  const called =C.filter(r=>r.lastCall).length;          // 통화 시도(최근통화일 있음)
+  const gamang =C.filter(r=>S_GAMANG.has(r.status)).length;  // 가망 이상(누적)
+  const yeyak  =C.filter(r=>S_YEYAK.has(r.status)).length;   // 방문예약 이상(누적)
+  const bangmun=C.filter(r=>S_BANGMUN.has(r.status)).length; // 방문완료 이상(누적)
+  const deal   =C.filter(r=>S_GYEYAK.has(r.status)).length;  // 계약완료
+  const hyeobui=C.filter(r=>r.status==="계약협의").length;
+  return {tot,called,gamang,yeyak,bangmun,deal,hyeobui};
+}
+function renderDash(){
+  const C=state.customers, a=dashAgg(), t=todayStr();
+  const todayCb=C.filter(r=>inQueue(r)&&r.nextCall===t).length;
+  const pastCb =C.filter(r=>inQueue(r)&&r.nextCall&&r.nextCall<t).length;
+  document.getElementById("dashCards").innerHTML=`
+    ${dcard("총 DB",a.tot,"보관함 제외")}
+    ${dcard("통화 시도",a.called,`통화율 ${pctI(a.called,a.tot)}%`,"#2F6DB0")}
+    ${dcard("가망 이상",a.gamang,`가망률 ${pctI(a.gamang,a.called)}%`,STATUS_COLOR.가망)}
+    ${dcard("방문 예약(누적)",a.yeyak,`예약률 ${pctI(a.yeyak,a.gamang)}%`,STATUS_COLOR.방문예약)}
+    ${dcard("방문 완료",a.bangmun,`방문율 ${pctI(a.bangmun,a.yeyak)}%`,STATUS_COLOR.방문완료)}
+    ${dcard("계약 완료 ★",a.deal,`전체계약률 ${pctF(a.deal,a.tot)}%`,STATUS_COLOR.계약완료)}
+    ${dcard("🟡 오늘 콜백",todayCb,"오늘 재통화",STATUS_COLOR.부재)}
+    ${dcard("🔴 놓친 콜백",pastCb,"기한 지남",STATUS_COLOR.거부)}
+    ${dcard("보관함(삭제 복구)",state.archive.length,"복구 가능",STATUS_COLOR.거부)}`;
+  renderFunnel(a);
+  renderDist();
+  renderAttrib();   // 🆕 F5: 귀속(콜러·상담자) 배분 리포트
+  renderMonthly();
+  renderDaily();
+  renderGoal(a);
+}
+function dcard(lab,big,sub,color){return `<div class="card"><div class="lab">${lab}</div><div class="big" style="${color?`color:${color}`:""}">${big}</div><div class="lab" style="margin-top:2px;font-weight:600">${sub||""}</div></div>`;}
+
+function renderFunnel(a){
+  const steps=[
+    ["DB (전체)",a.tot,"#5B6B7C"],["통화 시도",a.called,"#2F6DB0"],["가망 이상",a.gamang,STATUS_COLOR.가망],
+    ["방문 예약",a.yeyak,STATUS_COLOR.방문예약],["방문 완료",a.bangmun,STATUS_COLOR.방문완료],["계약",a.deal,STATUS_COLOR.계약완료]
+  ];
+  const conv=[["연결률",a.called,a.tot],["가망률",a.gamang,a.called],["예약률",a.yeyak,a.gamang],["방문율",a.bangmun,a.yeyak],["계약률",a.deal,a.bangmun]];
+  document.getElementById("dashFunnel").innerHTML=`
+    <div class="funnel">${steps.map(s=>{const p=pctI(s[1],a.tot);return `
+      <div class="fn-row"><span class="fn-l">${s[0]}</span>
+        <div class="fn-bar"><div class="fn-fill" style="width:${Math.max(p,2)}%;background:${s[2]}"></div></div>
+        <span class="fn-v">${s[1]}명 · 전체 ${p}%</span></div>`;}).join("")}</div>
+    <div class="convrow">${conv.map(c=>`<div class="conv"><div class="conv-k">${c[0]}</div><div class="conv-v">${pctI(c[1],c[2])}%</div><div class="conv-s">${c[1]} / ${c[2]}</div></div>`).join("")}</div>`;
+}
+function renderDist(){
+  const C=state.customers;
+  const counts={}; STATUSES.forEach(s=>counts[s]=0);
+  C.forEach(r=>{counts[r.status]=(counts[r.status]||0)+1;});
+  const maxS=Math.max(1,...Object.values(counts));
+  const byGrade={A:0,B:0,C:0,D:0}; C.forEach(r=>{ if(byGrade[r.grade]!=null) byGrade[r.grade]++; });
+  const maxG=Math.max(1,...Object.values(byGrade));
+  const gcol={A:"#B23A48",B:"#C77D2E",C:"#2F6DB0",D:"#5B6B7C"};
+  // 🆕 F3) 출처별 분포 + 출처별 계약(계약완료) 수
+  const bySource={}; SOURCES.forEach(s=>bySource[s]=0); let noSource=0;
+  const bySourceDeal={}; SOURCES.forEach(s=>bySourceDeal[s]=0);
+  // 🆕 P7) 출처별 결번 수 — "이 출처 DB는 결번율 30%" 처럼 DB 품질을 객관적으로 잰다.
+  const bySourceDead={}; SOURCES.forEach(s=>bySourceDead[s]=0); let noSourceDead=0;
+  C.forEach(r=>{
+    if(r.source){ bySource[r.source]=(bySource[r.source]||0)+1;
+      if(S_GYEYAK.has(r.status)) bySourceDeal[r.source]=(bySourceDeal[r.source]||0)+1;
+      if(r.status==="결번") bySourceDead[r.source]=(bySourceDead[r.source]||0)+1; }
+    else { noSource++; if(r.status==="결번") noSourceDead++; }
+  });
+  const deadPct=(n,tot)=>tot?Math.round(n/tot*100):0;
+  const deadTxt=(n,tot)=>{ if(!n) return ""; const p=deadPct(n,tot);
+    return ` · <span style="color:${p>=20?"var(--danger)":p>=10?"var(--warn)":"var(--muted)"}">결번 ${n} (${p}%)</span>`; };
+  const maxSrc=Math.max(1,...Object.values(bySource),noSource);
+  document.getElementById("statusBreak").innerHTML=
+    `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:8px">상태 분포</div>`+
+    STATUSES.filter(s=>counts[s]).map(s=>`
+      <div class="barrow"><div class="k">${s}</div>
+        <div class="track"><div class="fill" style="width:${counts[s]/maxS*100}%;background:${STATUS_COLOR[s]}"></div></div>
+        <div class="v">${counts[s]}</div></div>`).join("")+
+    `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:16px 0 8px">등급 분포</div>`+
+    (["A","B","C","D"].some(g=>byGrade[g])?["A","B","C","D"].filter(g=>byGrade[g]).map(g=>`
+      <div class="barrow"><div class="k">${g}등급</div>
+        <div class="track"><div class="fill" style="width:${byGrade[g]/maxG*100}%;background:${gcol[g]}"></div></div>
+        <div class="v">${byGrade[g]}</div></div>`).join(""):'<div class="empty-note" style="padding:14px">등급을 지정한 고객이 없습니다.</div>')+
+    `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:16px 0 8px">출처별 분포 <span style="font-weight:600;color:var(--text-4)">(결번율 = DB 품질 · 20% 이상이면 부실 DB)</span></div>`+
+    (SOURCES.some(s=>bySource[s])||noSource?
+      SOURCES.filter(s=>bySource[s]).map(s=>`
+        <div class="barrow"><div class="k">${s}</div>
+          <div class="track"><div class="fill" style="width:${bySource[s]/maxSrc*100}%;background:var(--info)"></div></div>
+          <div class="v">${bySource[s]}건${bySourceDeal[s]?` · 계약 ${bySourceDeal[s]}`:""}${deadTxt(bySourceDead[s],bySource[s])}</div></div>`).join("")+
+      (noSource?`
+        <div class="barrow"><div class="k">미입력</div>
+          <div class="track"><div class="fill" style="width:${noSource/maxSrc*100}%;background:var(--text-4)"></div></div>
+          <div class="v">${noSource}건${deadTxt(noSourceDead,noSource)}</div></div>`:"")
+      :'<div class="empty-note" style="padding:14px">출처를 입력한 고객이 없습니다.</div>');
+}
+/* 🆕 F5) 귀속(콜러·상담자) 배분 리포트 — 로엔 합의안 제7조(귀속은 콜 시스템 기록 기준) 대응.
+   집계 대상은 상태 '계약완료' 고객만. 인센티브 가중 환산은 ATTRIB_SPLIT(제2조) 비율을 그대로 곱한다.
+   상담자별 전환율은 §09-2 배정 규칙의 측정 지표 — counselor 지정 고객 중 방문완료 이상(S_BANGMUN) 대비 계약완료 비율. */
+function attribAgg(){
+  const deals=state.customers.filter(r=>r.status==="계약완료");
+  const stat={};
+  const ensure=n=>{ if(!stat[n]) stat[n]={callerDeals:0,counselorDeals:0,convBase:0,convDeal:0}; return stat[n]; };
+  deals.forEach(r=>{
+    if(r.caller) ensure(r.caller).callerDeals++;
+    if(r.counselor) ensure(r.counselor).counselorDeals++;
+  });
+  state.customers.forEach(r=>{
+    if(!r.counselor || !S_BANGMUN.has(r.status)) return;   // 분모: 상담자 지정 + 방문완료 이상(누적)
+    const s=ensure(r.counselor);
+    s.convBase++;
+    if(r.status==="계약완료") s.convDeal++;
+  });
+  const missing=deals.filter(r=>!r.caller||!r.counselor).length;   // 배분 분쟁 예방 포인트 — 계약인데 귀속 미입력
+  const names=Object.keys(stat).sort((a,b)=>a.localeCompare(b,"ko"));
+  const rows=names.map(n=>{
+    const s=stat[n];
+    return {name:n, callerDeals:s.callerDeals, counselorDeals:s.counselorDeals,
+      weighted:s.callerDeals*ATTRIB_SPLIT.caller + s.counselorDeals*ATTRIB_SPLIT.counselor,
+      convBase:s.convBase, convDeal:s.convDeal};
+  });
+  return {rows, missing, totalDeals:deals.length};
+}
+function renderAttrib(){
+  const {rows,missing,totalDeals}=attribAgg();
+  const warnEl=document.getElementById("attribWarn");
+  if(warnEl) warnEl.innerHTML = missing
+    ? `<span style="color:var(--danger);font-weight:800">⚠ 귀속 미입력 계약 ${missing}건</span>`
+    : `계약완료 ${totalDeals}건 기준`;
+  const head=["이름","콜러로 계약","상담자로 계약",`가중 환산(${ATTRIB_SPLIT.caller}×콜러+${ATTRIB_SPLIT.counselor}×상담자)`,"상담자 전환율"];
+  const trs=rows.map(r=>`<tr><td class="left" style="font-weight:700">${esc(r.name)}</td>
+    <td class="mono">${r.callerDeals}건</td>
+    <td class="mono">${r.counselorDeals}건</td>
+    <td class="mono" style="font-weight:800;color:var(--accent)">${r.weighted.toFixed(1)}</td>
+    <td class="mono">${r.convBase?`${pctF(r.convDeal,r.convBase)}% <span style="color:var(--muted)">(${r.convDeal}/${r.convBase})</span>`:"—"}</td></tr>`).join("");
+  const el=document.getElementById("dashAttrib");
+  if(el) el.innerHTML=`<thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${trs||emptyRow(5)}</tbody>`;
+}
+function renderMonthly(){
+  const groups={};
+  state.customers.forEach(r=>{ const k=monKey(r.createdAt); (groups[k]=groups[k]||[]).push(r); });
+  const keys=Object.keys(groups).sort().reverse();   // 최근 월 먼저
+  const head=["등록월","DB건수","통화","가망이상","방문예약","방문완료","계약","계약률"];
+  const rows=keys.map(k=>{
+    const g=groups[k];
+    const db=g.length, cl=g.filter(r=>r.lastCall).length, gm=g.filter(r=>S_GAMANG.has(r.status)).length,
+      yy=g.filter(r=>S_YEYAK.has(r.status)).length, bm=g.filter(r=>S_BANGMUN.has(r.status)).length, dl=g.filter(r=>S_GYEYAK.has(r.status)).length;
+    return `<tr><td class="left" style="font-weight:700">${monLabel(k)}</td><td class="mono">${db}</td><td class="mono">${cl}</td>
+      <td class="mono" style="color:${STATUS_COLOR.가망}">${gm}</td><td class="mono">${yy}</td><td class="mono">${bm}</td>
+      <td class="mono" style="color:${STATUS_COLOR.계약완료};font-weight:800">${dl}</td><td class="mono">${pctF(dl,db)}%</td></tr>`;
+  }).join("");
+  document.getElementById("dashMonthly").innerHTML=
+    `<thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows||emptyRow(8)}</tbody>`;
+}
+function renderDaily(){
+  const dbByDay={}, callByDay={};
+  state.customers.concat(state.archive).forEach(r=>{
+    if(r.createdAt){ const k=r.createdAt.slice(0,10); dbByDay[k]=(dbByDay[k]||0)+1; }
+    const lc=(r.lastCallAt?r.lastCallAt.slice(0,10):(r.lastCall||"").slice(0,10));
+    if(lc){ callByDay[lc]=(callByDay[lc]||0)+1; }
+  });
+  const today=new Date(todayStr()); const days=[];
+  for(let i=0;i<14;i++){ const d=new Date(today); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const rows=days.map(k=>{
+    const md=`${+k.slice(5,7)}/${+k.slice(8,10)}`;
+    const isToday=k===todayStr();
+    return `<tr${isToday?' style="background:var(--accent-soft)"':''}><td class="left" style="font-weight:${isToday?800:600}">${md} (${dowLabel(k)})${isToday?' · 오늘':''}</td>
+      <td class="mono">${dbByDay[k]||0}</td><td class="mono" style="color:#2F6DB0;font-weight:700">${callByDay[k]||0}</td></tr>`;
+  }).join("");
+  document.getElementById("dashDaily").innerHTML=
+    `<thead><tr><th>날짜</th><th>DB 등록</th><th>통화</th></tr></thead><tbody>${rows}</tbody>`;
+}
+/* 목표 역산 — 계약 목표와 단계별 전환율로 필요한 방문/가망/통화/DB를 역산 */
+const GOAL_KEY="tm_goal_v1";
+function loadGoal(){
+  let g={}; try{ g=JSON.parse(localStorage.getItem(GOAL_KEY)||"{}")||{}; }catch(e){ g={}; }
+  const a=dashAgg();
+  return {
+    target: g.target!=null?g.target:2,
+    conn:   g.conn!=null?g.conn:(a.tot?+(a.called/a.tot).toFixed(2):0.9),      // 연결률 발신→통화
+    interest:g.interest!=null?g.interest:(a.called?+(a.gamang/a.called).toFixed(2):0.15), // 관심률 통화→가망
+    visit:  g.visit!=null?g.visit:(a.gamang?+(a.bangmun/a.gamang).toFixed(2):0.3),   // 방문률 가망→방문
+    deal:   g.deal!=null?g.deal:(a.bangmun?+(a.deal/a.bangmun).toFixed(2):0.2)       // 계약률 방문→계약
+  };
+}
+function saveGoal(g){ try{ localStorage.setItem(GOAL_KEY,JSON.stringify(g)); }catch(e){} }
+function goalOutHtml(g){
+  const needVisit = g.deal>0 ? Math.ceil(g.target/g.deal) : 0;
+  const needGamang= g.visit>0 ? Math.ceil(needVisit/g.visit) : 0;
+  const needCall  = g.interest>0 ? Math.ceil(needGamang/g.interest) : 0;
+  const needDB    = g.conn>0 ? Math.ceil(needCall/g.conn) : 0;
+  return `
+    <div class="goal-o"><div class="n">${needDB.toLocaleString()}</div><div class="l">필요 DB(발신)</div></div>
+    <div class="goal-o"><div class="n">${needCall.toLocaleString()}</div><div class="l">필요 통화</div></div>
+    <div class="goal-o"><div class="n">${needGamang.toLocaleString()}</div><div class="l">필요 가망</div></div>
+    <div class="goal-o"><div class="n">${needVisit.toLocaleString()}</div><div class="l">필요 방문</div></div>
+    <div class="goal-o"><div class="n">${g.target}</div><div class="l">계약 목표</div></div>`;
+}
+function renderGoal(){
+  const g=loadGoal();
+  const pin=(k,lab,val)=>`<div class="goal-in"><label>${lab}</label><input type="number" step="1" data-goal="${k}" value="${val}"></div>`;
+  document.getElementById("dashGoal").innerHTML=`
+    <div class="goal-grid">
+      <div class="goal-in"><label>이번 달 계약 목표(건)</label><input type="number" min="0" step="1" data-goal="target" value="${g.target}"></div>
+      ${pin("conn","연결률 % (발신→통화)",Math.round(g.conn*100))}
+      ${pin("interest","관심률 % (통화→가망)",Math.round(g.interest*100))}
+      ${pin("visit","방문률 % (가망→방문)",Math.round(g.visit*100))}
+      ${pin("deal","계약률 % (방문→계약)",Math.round(g.deal*100))}
+    </div>
+    <div class="goal-out" id="goalOut">${goalOutHtml(g)}</div>
+    <div class="goal-hint">전환율은 처음엔 <b>현재 실적</b>으로 자동 채워집니다. 파란칸(%)을 본인 목표 전환율로 바꾸면 필요 콜 수가 즉시 다시 계산됩니다.</div>`;
+  document.querySelectorAll("#dashGoal [data-goal]").forEach(inp=>inp.oninput=()=>{
+    const g2=loadGoal(); const k=inp.dataset.goal; let v=parseFloat(inp.value); if(isNaN(v))v=0;
+    g2[k] = (k==="target") ? Math.max(0,Math.round(v)) : Math.min(1,Math.max(0,v/100));
+    saveGoal(g2);
+    const out=document.getElementById("goalOut"); if(out) out.innerHTML=goalOutHtml(g2);   // 입력 포커스 유지
+  });
+}
+
+/* ---------- archive modal ---------- */
+/* 🆕 P3) 보관함 통합 — 거부/차단 구분 폐지(해당 상태는 파기됨). '선택 삭제' 복구 전용 단일 보관함 */
+let archiveView="all";
+function archiveList(){ return state.archive; }
+function renderArchive(){
+  const list=archiveList(), isBlock=false;
+  const t=document.getElementById("archiveTitle"); if(t) t.textContent="🗄 보관함 — 삭제한 고객 복구";
+  const rows=list.map(r=>`<tr>
+     <td class="ph-cell">${esc(r.phone)}</td>
+     <td class="left">${esc(r.name)||"—"}</td>
+     <td><span class="badge" style="background:${STATUS_COLOR[r.status]||'#666'}">${esc(r.status)}</span></td>
+     <td class="left" style="color:var(--muted);max-width:320px">${esc((r.memo||"").slice(0,70))}</td>
+     <td><button class="btn" onclick="restoreRow(${r.uid})">복구</button>
+         <button class="rowdel" onclick="hardDel(${r.uid})">완전삭제</button></td></tr>`).join("");
+  document.getElementById("archiveTable").innerHTML= list.length?
+    `<thead><tr><th>연락처</th><th>고객명</th><th>상태</th><th>메모</th><th></th></tr></thead><tbody>${rows}</tbody>`:"";
+  const em=document.getElementById("archiveEmpty");
+  em.textContent="보관된 고객이 없습니다. ('선택 삭제'한 고객이 여기 들어옵니다)";
+  em.style.display=list.length?"none":"block";
+}
+
+/* ---------- copy (one click) ---------- */
+function copyText(txt,onOk){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(onOk).catch(()=>fallbackCopy(txt,onOk));
+  } else fallbackCopy(txt,onOk);
+}
+window.copyPhone=function(txt,btn){
+  copyText(txt,()=>{ toast("복사됨 · "+txt);
+    if(btn){const o=btn.textContent;btn.textContent="✓";btn.classList.add("copied");
+      setTimeout(()=>{btn.textContent=o;btn.classList.remove("copied");},1000);} });
+};
+function fallbackCopy(txt,cb){
+  const ta=document.createElement("textarea");ta.value=txt;
+  ta.style.cssText="position:fixed;top:0;left:0;opacity:0";
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand("copy");cb();}catch(e){toast("복사 실패 — 번호를 직접 선택해 복사하세요");}
+  document.body.removeChild(ta);
+}
+
+/* ---------- multi add ---------- */
+function openAdd(){document.getElementById("addBox").value="";document.getElementById("addPrefix").value="010";
+  const srcEl0=document.getElementById("addSource"); if(srcEl0) srcEl0.value="";   // 🆕 F3: 매번 새로 고르도록 초기화
+  const callerEl0=document.getElementById("addCaller"); if(callerEl0) callerEl0.value=loadMyName();   // 🆕 F4: 기본값 = 내 이름
+  // 🆕 P1) 출처 필수 필드 초기화 — 경로·동의는 매번 새로 고르게, 수집 일자는 오늘로
+  const sp0=document.getElementById("addSrcPath"); if(sp0) sp0.value="";
+  const sc0=document.getElementById("addSrcConsent"); if(sc0) sc0.value="";
+  const sd0=document.getElementById("addSrcDate"); if(sd0) sd0.value=todayStr();
+  const spr0=document.getElementById("addSrcProof"); if(spr0) spr0.value="";
+  refreshStaffNames();   // 🆕 F4: 콜러 자동완성 목록 최신화
+  updateAddPreview();
+  document.getElementById("addModal").classList.add("on");refocusParent();
+  setTimeout(()=>{ refocusParent(); document.getElementById("addBox").focus(); },80);}
+function closeAdd(){document.getElementById("addModal").classList.remove("on");}
+function parseAddList(text){
+  // 앞에 붙일 번호(접두): 기본 "010" → 뒷자리만 입력. 예 "*28"이면 *28+번호 로 저장.
+  const pfxEl=document.getElementById("addPrefix");
+  const pfx=(pfxEl?pfxEl.value:"010").trim();
+  const isPlain = (pfx===""||pfx==="010");   // 표준 010 휴대폰
+  const existing=new Set(state.customers.concat(state.archive).map(r=>digits(r.phone)));
+  const seen=new Set(); const res={ok:[],dup:0,bad:0,opt:0};   // 🆕 P3) opt=수신거부 이력이라 제외된 수
+  text.split(/[\n\r]+/).forEach(line=>{
+    line=line.trim(); if(!line)return;
+    let name="",phonePart=line;
+    const parts=line.split(/[,\t]/);
+    if(parts.length>=2){phonePart=parts[0];name=parts.slice(1).join(" ").trim();}
+    let d=digits(phonePart);
+    if(d&&!d.startsWith("010")&&d.length>=8)d="010"+d.slice(-8);   // 010 자동 보정 → 11자리 휴대폰
+    if(d.length!==11){res.bad++;return;}
+    const full = isPlain ? `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}` : `${pfx}${d}`;
+    const key = digits(full);   // 접두(*,# 제외한 숫자)로 중복 판정
+    if(seen.has(key)||existing.has(key)){res.dup++;return;}
+    if(optoutHas(key)){res.opt++;return;}   // 🆕 P3) 수신거부 이력 번호는 재등록 금지
+    seen.add(key);
+    res.ok.push({phone:full,name});
+  });
+  return res;
+}
+/* 🆕 P1) 신규 등록 시 출처 필수 — 수집 경로·동의 방식 미기재면 저장 차단(개인정보보호법 제20조) */
+function addSrcOk(){ return true; }   // 출처 입력 제거(2026-08-01) — 전화하며 「DB 출처 관리」로 분류하므로 등록은 항상 허용
+function updateAddPreview(){
+  const r=parseAddList(document.getElementById("addBox").value);
+  const srcOk=addSrcOk();
+  document.getElementById("addPreview").innerHTML=
+    `추가 <b>${r.ok.length}</b>명`+(r.dup?` · 중복 ${r.dup} 제외`:"")+(r.bad?` · 형식오류 ${r.bad}`:"")
+    +(r.opt?` · <span style="color:var(--danger)">수신거부 이력 ${r.opt} 제외</span>`:"")
+    +(srcOk?"":` · <span style="color:var(--danger);font-weight:800">⚠️ 출처 미기재 — 저장 불가</span>`);
+  document.getElementById("addConfirm").disabled=r.ok.length===0||!srcOk;
+}
+function doAdd(){
+  const r=parseAddList(document.getElementById("addBox").value);
+  if(!r.ok.length)return;
+  // 출처 입력 제거(2026-08-01) — 전화하며 「DB 출처 관리」로 분류. 신규는 '미분류(srcState:"")'로 등록.
+  const base=Date.now(), N=r.ok.length;   // 맨 위(먼저 입력)일수록 늦은 시각 → 목록/정렬 순서 일치
+  const callerEl=document.getElementById("addCaller"), caller=(callerEl?callerEl.value:"").trim();   // 담당자 = 이번 배치 전체 적용
+  const recs=r.ok.map((x,i)=>normalizeRec({phone:x.phone,name:x.name,status:"신규",source:"",caller,
+    srcPath:"",srcDate:"",srcConsent:"",srcProof:"",srcState:"",createdAt:new Date(base+(N-1-i)).toISOString()}));
+  state.customers=recs.concat(state.customers);
+  save(); recs.forEach(rc=>emitCust(rc,"upsert")); renderAll(); closeAdd();   // 🔗 신규 고객 → 고객 목록 반영
+  toast(`신규 ${r.ok.length}명 추가${r.dup?` · 중복 ${r.dup} 제외`:""}`);
+}
+
+/* ---------- render all + nav ---------- */
+/* 🩹 대량 렌더(innerHTML 교체)·네이티브 confirm() 이후 Electron webContents가 입력 포커스를
+   잃어 클릭해도 커서가 안 생기던 문제 → 콜파일럿 쪽에 이미 있는 refocusApp()을
+   부모창(top window)에서 호출해 되돌린다. (tmcrm은 그 안에 iframe으로 얹혀 있어 window.parent로 접근) */
+function refocusParent(){
+  const go=()=>{ try{ if(window.parent && window.parent!==window && typeof window.parent.refocusApp==="function") window.parent.refocusApp(); }catch(e){} };
+  try{ requestAnimationFrame(go); }catch(e){ go(); }
+  setTimeout(go,60);
+}
+function renderAll(){renderToday();renderDB();renderDash();refocusParent();}
+/* ---------- 드롭다운(⚙️ 관리 / ⋯ 더보기) 작은 헬퍼: 배경 클릭·Esc로 닫힘 ---------- */
+function closeAllDropdowns(){ document.querySelectorAll(".dd.open").forEach(d=>{ if(typeof d.__ddClose==="function") d.__ddClose(); else d.classList.remove("open"); }); }
+function setupDropdown(ddId){
+  const dd=document.getElementById(ddId); if(!dd) return;
+  const trigger=dd.querySelector(".dd-trigger"), menu=dd.querySelector(".dd-menu");
+  if(!trigger||!menu) return;
+  // 📌 메뉴를 position:fixed로 뷰포트(iframe) 기준 배치 — header 등 조상의 스택 컨텍스트에 잘리지 않게 하고
+  //    화면 경계를 넘지 않도록 좌표를 보정한다. (조상 밖 = iframe 밖으로는 못 나가므로 iframe 뷰포트 안에서만 보정)
+  function place(){
+    menu.style.position="fixed";
+    menu.style.right="auto";   // .dd-right 기본 CSS(right:0)와 left를 동시에 쓰면 폭이 늘어남 → 항상 left로만 배치
+    // 🔍 body.style.zoom 보정: menu는 fixed라도 zoom된 body 서브트리 안에 있어서 style.left/top 값이
+    //    렌더링 시 zoom배가 한 번 더 곱해진다(이중 확대) → 오른쪽·아래로 밀려 화면 밖에서 잘린다.
+    //    그래서 "줌 이전(로컬)" 좌표계에서 계산해 그대로 style.left/top에 대입해야 화면과 정확히 맞는다.
+    //    ⚠ 좌표계 주의(실측): getBoundingClientRect·window.innerWidth = 확대된 시각적 px → Z로 나눠 로컬화.
+    //      offsetWidth/offsetHeight = zoom 미반영 "로컬" 값 그대로 → 나누면 안 됨(나누면 메뉴 폭을 과소평가해
+    //      우측 클램프가 덜 당겨져 115%에서 25px, 150%에서 103px 삐져나가는 버그가 실제로 있었다).
+    const Z=parseFloat(document.body.style.zoom)||1;
+    const r0=trigger.getBoundingClientRect();
+    const r={left:r0.left/Z, right:r0.right/Z, top:r0.top/Z, bottom:r0.bottom/Z};
+    const vw=window.innerWidth/Z, vh=window.innerHeight/Z;
+    menu.style.maxWidth=Math.max(160,vw-16)+"px";   // 로컬 좌표계 뷰포트 폭 안으로 최종 클램프(내용 폭은 CSS width:max-content가 결정)
+    const mw=menu.offsetWidth, mh=menu.offsetHeight;
+    const alignRight=dd.classList.contains("dd-right");
+    let left = alignRight ? (r.right-mw) : r.left;
+    left=Math.max(8,Math.min(left,vw-mw-8));
+    let top = r.bottom+6;
+    if(top+mh > vh-8) top=Math.max(8,r.top-6-mh);
+    menu.style.left=left+"px"; menu.style.top=top+"px";
+  }
+  function onDocClick(e){ if(!dd.contains(e.target)) close(); }
+  function onKey(e){ if(e.key==="Escape") close(); }
+  function onReflow(){ place(); }
+  function close(){ dd.classList.remove("open"); document.removeEventListener("click",onDocClick,true); document.removeEventListener("keydown",onKey);
+    window.removeEventListener("resize",onReflow); window.removeEventListener("scroll",onReflow,true); }
+  function open(){ closeAllDropdowns(); dd.classList.add("open"); place(); document.addEventListener("click",onDocClick,true); document.addEventListener("keydown",onKey);
+    window.addEventListener("resize",onReflow); window.addEventListener("scroll",onReflow,true); }
+  dd.__ddClose=close;
+  trigger.onclick=e=>{ e.stopPropagation(); dd.classList.contains("open")?close():open(); };
+  menu.addEventListener("click",e=>{ if(e.target.closest(".dd-item")) close(); });   // 항목 클릭 시(기존 onclick 실행 후) 메뉴 닫기
+}
+function buildStatusFilter(){
+  const sel=document.getElementById("fStatus");
+  sel.innerHTML='<option value="">상태 전체</option>'+STATUSES.map(s=>`<option>${s}</option>`).join("");
+}
+function initEvents(){
+  document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+    document.getElementById("v-"+b.dataset.tab).classList.add("on");
+  });
+  document.getElementById("search").oninput=renderDB;
+  document.getElementById("fStatus").onchange=renderDB;
+  document.getElementById("fGrade").onchange=renderDB;
+  document.getElementById("fBujeCount").onchange=()=>{
+    if(document.getElementById("fBujeCount").value) document.getElementById("fStatus").value="부재";
+    renderDB();
+  };
+  document.getElementById("fDate").onchange=()=>{
+    document.getElementById("btnDateClear").style.display=document.getElementById("fDate").value?"":"none";
+    renderDB();
+  };
+  document.getElementById("btnDateClear").onclick=()=>{
+    document.getElementById("fDate").value=""; document.getElementById("btnDateClear").style.display="none"; renderDB();
+  };
+  // 🆕 P3) 출처 분류 필터
+  const _fsrc=document.getElementById("fSrc"); if(_fsrc) _fsrc.onchange=renderDB;
+  document.getElementById("btnOnlyBuje").onclick=()=>{
+    const s=document.getElementById("fStatus"); s.value="부재";
+    document.getElementById("fGrade").value=""; document.getElementById("search").value="";
+    const _fs2=document.getElementById("fSrc"); if(_fs2) _fs2.value="";
+    document.getElementById("fBujeCount").value="";
+    document.getElementById("fDate").value=""; document.getElementById("btnDateClear").style.display="none";
+    renderDB();
+    const sc=document.querySelector("#v-db .scroller"); if(sc)sc.scrollTop=0;
+  };
+  document.getElementById("btnAdd").onclick=openAdd;
+  document.getElementById("btnDelSel").onclick=delSelected;
+  document.getElementById("closeAdd").onclick=closeAdd;
+  document.getElementById("cancelAdd").onclick=closeAdd;
+  document.getElementById("addBox").oninput=updateAddPreview;
+  document.getElementById("addPrefix").oninput=updateAddPreview;
+  // 🆕 P1) 출처 필수 select 가 바뀔 때도 미리보기·저장 버튼 상태 갱신 (널가드 — 요소 제거 시 바인딩 전체가 죽는 함정 방지)
+  const _sp=document.getElementById("addSrcPath"); if(_sp) _sp.onchange=updateAddPreview;
+  const _sc=document.getElementById("addSrcConsent"); if(_sc) _sc.onchange=updateAddPreview;
+  document.getElementById("addConfirm").onclick=doAdd;
+  // 바깥(배경) 클릭으로는 닫지 않음 — 실수 방지. 취소/✕로만 닫는다.
+  document.getElementById("addModal").onclick=e=>{};
+  document.getElementById("btnArchive").onclick=()=>{archiveView="all";renderArchive();document.getElementById("archiveModal").classList.add("on");};
+  document.getElementById("closeArchive").onclick=()=>document.getElementById("archiveModal").classList.remove("on");
+  document.getElementById("btnEmptyArchive").onclick=emptyArchive;
+  // 바깥(배경) 클릭으로는 닫지 않음 — 실수 방지. ✕로만 닫는다.
+  document.getElementById("archiveModal").onclick=e=>{};
+  // 🔄 배정 받기 — 부모에게 서버 배정 확인 요청 (결과는 message 리스너의 tmcrm:assign 에서 처리)
+  document.getElementById("btnAssign").onclick=()=>{
+    try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({type:"tmcrm:assign-req"},"*"); toast("배정 확인 중..."); } }catch(e){}
+  };
+  // 📤 고객 서버로 보내기 (마스터 전용 — tmcrm:role 수신 전까지는 숨김 상태)
+  document.getElementById("btnUploadServer").onclick=()=>{
+    const list=state.customers.filter(r=>r.phone);   // 활성 고객(보관함 제외) · 전화번호 있는 전체
+    if(!list.length){ toast("보낼 고객이 없습니다."); return; }
+    if(!confirm(`고객 ${list.length}명을 마스터 콘솔(서버)로 보낼까요? 이미 서버에 있는 번호는 건너뜁니다.`)) return;
+    const items=list.map(r=>({phone:r.phone,name:r.name||"",grade:r.grade||"",status:r.status||"신규",memo:r.memo||""}));
+    try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({type:"tmcrm:upload-req",items},"*"); toast("서버로 보내는 중..."); } }catch(e){}
+  };
+  // 🔠 글씨 크기 — ⚙️ 관리 안 작은 모달. 슬라이더가 즉시 적용+저장(미리보기 겸)
+  document.getElementById("btnFontSize").onclick=()=>{
+    const pct=Math.round(loadFontScale()*100);
+    document.getElementById("fontRange").value=pct;
+    document.getElementById("fontPct").textContent=pct+"%";
+    document.getElementById("fontModal").classList.add("on");
+  };
+  document.getElementById("fontRange").oninput=()=>{
+    const pct=+document.getElementById("fontRange").value;
+    saveFontScale(pct/100);
+    document.getElementById("fontPct").textContent=pct+"%";
+  };
+  document.getElementById("fontReset").onclick=()=>{
+    saveFontScale(1);
+    document.getElementById("fontRange").value=100;
+    document.getElementById("fontPct").textContent="100%";
+  };
+  document.getElementById("closeFontModal").onclick=()=>document.getElementById("fontModal").classList.remove("on");
+  document.getElementById("fontDone").onclick=()=>document.getElementById("fontModal").classList.remove("on");
+  // 바깥(배경) 클릭으로는 닫지 않음 — 실수 방지. ✕/완료로만 닫는다.
+  document.getElementById("fontModal").onclick=e=>{};
+  // 👤 내 이름 설정 — 콜러(발굴자) 기본값(localStorage 'tmcrm_me'). prompt 대신 기존 모달 패턴 재사용.
+  document.getElementById("btnMe").onclick=()=>{
+    document.getElementById("meInput").value=loadMyName();
+    document.getElementById("meModal").classList.add("on");
+    refocusParent();
+    setTimeout(()=>{ refocusParent(); document.getElementById("meInput").focus(); },80);
+  };
+  document.getElementById("meCancel").onclick=()=>document.getElementById("meModal").classList.remove("on");
+  document.getElementById("closeMeModal").onclick=()=>document.getElementById("meModal").classList.remove("on");
+  document.getElementById("meSave").onclick=()=>{
+    saveMyName(document.getElementById("meInput").value);
+    document.getElementById("meModal").classList.remove("on");
+    toast("내 이름을 저장했습니다 · "+(loadMyName()||"미설정"));
+  };
+  // 바깥(배경) 클릭으로는 닫지 않음 — 다른 모달과 동일한 패턴.
+  document.getElementById("meModal").onclick=e=>{};
+  // 🆕 P1) 📋 DB 출처 관리 (일괄 분류) + 출처 상세 모달
+  const _sa=document.getElementById("btnSrcAudit");
+  if(_sa) _sa.onclick=()=>{ auditFilter="미분류"; auditSel.clear(); renderSrcAudit(); document.getElementById("srcAuditModal").classList.add("on"); refocusParent(); };
+  const _csa=document.getElementById("closeSrcAudit");
+  if(_csa) _csa.onclick=()=>document.getElementById("srcAuditModal").classList.remove("on");
+  // 🆕 P5) 🗂 미접촉 자산 회수 · 보유 정리
+  const _rc=document.getElementById("btnRecall"); if(_rc) _rc.onclick=()=>openRecall("soon");
+  const _crc=document.getElementById("closeRecall");
+  if(_crc) _crc.onclick=()=>document.getElementById("recallModal").classList.remove("on");
+  const _rcx=document.getElementById("btnRecallExport"); if(_rcx) _rcx.onclick=exportRecallLog;
+  const _frc=document.getElementById("fRecall"); if(_frc) _frc.onchange=renderDB;
+  // 🆕 P4) ⛔ 수신거부 대장(감사) + 사유 입력 모달
+  const _ol=document.getElementById("btnOptoutLedger");
+  if(_ol) _ol.onclick=()=>{ renderOptoutLedger(); document.getElementById("optoutLedgerModal").classList.add("on"); refocusParent(); };
+  const _col=document.getElementById("closeOptoutLedger");
+  if(_col) _col.onclick=()=>document.getElementById("optoutLedgerModal").classList.remove("on");
+  const _ooc=document.getElementById("btnOptoutCopy"); if(_ooc) _ooc.onclick=copyOptoutLedger;
+  const _co=document.getElementById("closeOptout");
+  if(_co) _co.onclick=()=>document.getElementById("optoutModal").classList.remove("on");
+  document.getElementById("optoutLedgerModal").onclick=e=>{};
+  document.getElementById("optoutModal").onclick=e=>{};
+  const _cs=document.getElementById("closeSrc");
+  if(_cs) _cs.onclick=()=>document.getElementById("srcModal").classList.remove("on");
+  // 바깥(배경) 클릭으로는 닫지 않음 — 다른 모달과 동일한 패턴.
+  document.getElementById("srcAuditModal").onclick=e=>{};
+  document.getElementById("srcModal").onclick=e=>{};
+  document.getElementById("recallModal").onclick=e=>{};
+  setupDropdown("ddManage");
+}
+
+// 🆕 P3) 레거시 '거부'·'차단요청' 일괄 정리(1회) — 상태 폐지에 따라 DB에서 파기.
+//    차단요청은 재발신 방지 대장에 올린 뒤 파기(blocklist에도 이미 있음), 거부는 파기만(수신거부 의사까지는 아님).
+function purgeLegacyOnce(){
+  const FLAG_KEY="tmcrm_purge_refuse_v1";
+  try{ if(localStorage.getItem(FLAG_KEY)==="1") return; }catch(e){}
+  const targets=state.customers.concat(state.archive).filter(r=>r.status==="차단요청"||r.status==="거부");
+  targets.forEach(r=>{
+    if(r.status==="차단요청") optoutAdd(r,"차단요청","레거시 일괄 정리");
+    purgeByDigits(digits(r.phone));
+  });
+  if(targets.length){ save(); toast(`구버전 거부·차단요청 ${targets.length}명 정리(파기) 완료 — 재발신 방지 목록은 유지`); }
+  try{ localStorage.setItem(FLAG_KEY,"1"); }catch(e){}
+}
+// 🆕 부재 횟수 기능 추가 이전부터 이미 "부재" 상태였던 고객 → 최소 1회로 보정 (한 번만 실행)
+function initBujeCountOnce(){
+  const FLAG_KEY="tmcrm_bujecount_init_v1";
+  try{ if(localStorage.getItem(FLAG_KEY)==="1") return; }catch(e){}
+  let changed=false;
+  [state.customers, state.archive].forEach(list=>{
+    list.forEach(r=>{ if((r.status==="부재"||r.status==="연속부재") && !r.bujeCount){ r.bujeCount=1; changed=true; } });
+  });
+  if(changed) save();
+  try{ localStorage.setItem(FLAG_KEY,"1"); }catch(e){}
+}
+// 🆕 P5) 기존 데이터에 담당(assignedTo)·배분일(assignedAt)을 한 번 채운다.
+//    normalizeRec가 caller→assignedTo, createdAt→assignedAt으로 이미 승계하므로 여기서는 저장만 확정한다.
+//    (최종 접촉이 없는 예전 고객이 부팅하자마자 전부 회수되는 것을 막기 위해, 배분일이 없으면 오늘로 본다)
+function initRecallOnce(){
+  const FLAG_KEY="tmcrm_recall_init_v1";
+  let done=false; try{ done=localStorage.getItem(FLAG_KEY)==="1"; }catch(e){}
+  if(done) return;
+  const now=new Date().toISOString();
+  [state.customers,state.archive].forEach(list=>list.forEach(r=>{ if(!r.assignedAt) r.assignedAt=r.createdAt||now; }));
+  save();
+  try{ localStorage.setItem(FLAG_KEY,"1"); }catch(e){}
+}
+loadOptout(); loadRecallCfg(); loadRecallLog(); load(); initFontScale(); purgeLegacyOnce(); initBujeCountOnce(); initRecallOnce(); paintSaveDot(); buildStatusFilter(); initEvents(); renderAll();
+// 🆕 P5) 자동 회수 스윕 — 부팅 직후 1회, 이후 6시간마다(장시간 켜두는 PC 대응)
+setTimeout(()=>runRecallSweep(false),1500);
+setInterval(()=>runRecallSweep(true),6*60*60*1000);
+
+/* ============================================================
+   🔗 콜파일럿 발신 연동 브리지 (부모 창 ↔ 집수호 TM 콜매니저)
+   - 발신 패널에서 결과(부재/나중연락/거부/연속부재/가망/방문예약)+메모를
+     [정지]·[메모저장]·[다음 번호]로 확정하면 부모 창이 postMessage로 보냄.
+   - 여기서 전화번호로 고객을 찾아 상태·최근통화·다음연락일·메모를 갱신(없으면 신규 생성).
+   - 통화(ts)별 중복 반영 방지. 이 화면의 전화걸기는 부모(콜파일럿 ADB 발신)로 위임.
+   ============================================================ */
+(function(){
+  const SYNC_KEY="tmcrm_synced";
+  let applied={};
+  try{ applied=JSON.parse(localStorage.getItem(SYNC_KEY)||"{}")||{}; }catch(e){ applied={}; }
+  function saveApplied(){ try{ localStorage.setItem(SYNC_KEY,JSON.stringify(applied)); }catch(e){} }
+  // 발신 결과태그 → 집수호 상태 (이름이 동일해 1:1 매핑)
+  const TAG2STATUS={"부재":"부재","연속부재":"연속부재","나중연락":"나중연락","관심없음":"관심없음","결번":"결번","가망":"가망","방문예약":"방문예약","거부":"거부","차단요청":"차단요청"};
+  const p2=n=>String(n).padStart(2,"0");
+  function stampFromTs(ts){ const d=ts?new Date(ts):new Date(); if(isNaN(d)) return todayStr().slice(5);
+    return `${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+  function fmtPhone(v){ let d=digits(v); if(d&&!d.startsWith("010")&&d.length>=8)d="010"+d.slice(-8);
+    return d.length===11?`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`:(v||""); }
+
+  function applyOne(p){
+    if(!p||!p.number) return false;
+    const dn=digits(p.number); if(!dn) return false;
+    const tag=p.tag||"";
+    const status=TAG2STATUS[tag]||null;
+    // 🆕 P3) 수신거부(원클릭)·차단요청·거부 → DB 즉시 파기. 수신거부·차단요청은 재발신 방지 대장에 기록,
+    //    '거부'(레거시 경로)는 파기만. 동의하지 않은 DB는 보관하지 않는다.
+    if(p.legal==="수신거부" || status==="차단요청" || status==="거부"){
+      const lkey="L|"+(p.ts||"")+"|optout";
+      if(!applied[lkey]){
+        const r0=state.customers.find(c=>digits(c.phone)===dn)||state.archive.find(c=>digits(c.phone)===dn);
+        if(p.legal==="수신거부"||status==="차단요청")
+          // 🆕 P4) 발신 화면에서 온 사유(고객 발언)·통화시간을 대장에 그대로 — 감사 근거
+          optoutAdd(r0||{phone:fmtPhone(p.number),name:p.name||""}, p.legal==="수신거부"?"수신거부":"차단요청",
+            p.legal?"발신 화면 기록 · 즉시 파기":"발신 연동 · 즉시 파기",
+            {said:p.said||"", callSec:(p.callSec==null?null:p.callSec), src:"발신"});
+        purgeByDigits(dn);
+        applied[lkey]=1;
+      }
+      return true;
+    }
+    // 🆕 P3) 파기된 번호의 증빙 녹음은 대장 노트로 (고객 재생성 없이 종료)
+    if(p.legal==="증빙 녹음" && optoutHas(dn)){
+      const lkey="L|"+(p.ts||"")+"|"+p.legal;
+      if(!applied[lkey]){ const fn=String(p.evidence||"").split(/[\\/]/).pop();
+        optoutAppendNote(dn,"녹음 증빙 "+(fn||"")+(p.evidence?" ("+p.evidence+")":"")); applied[lkey]=1; }
+      return true;
+    }
+    // 🆕 P3) 수신거부 대장 번호는 어떤 결과가 와도 재등록 금지
+    if(optoutHas(dn)) return false;
+    // 활성 목록에서 우선 검색 → 없으면 보관함
+    let r=state.customers.find(c=>digits(c.phone)===dn), fromArchive=false;
+    if(!r){ const ai=state.archive.findIndex(c=>digits(c.phone)===dn);
+      if(ai>=0){ r=state.archive[ai]; fromArchive=true; } }
+    if(!r){ r=normalizeRec({phone:fmtPhone(p.number),name:p.name||"",status:"신규",createdAt:p.ts||new Date().toISOString()});
+      state.customers.unshift(r); }
+    // 보관돼 있던 고객이 다시 통화결과가 오면 활성으로 복귀
+    if(fromArchive && status){
+      state.archive=state.archive.filter(c=>c!==r); state.customers.unshift(r); }
+    // 🆕 F4: 발신 연동 경로(신규 생성 또는 caller 미입력)에 '내 이름'(tmcrm_me)을 자동 스탬프 — 이미 값 있으면 절대 덮지 않음
+    if(!r.caller){ const me=loadMyName(); if(me) r.caller=me; }
+    if(p.name && !r.name) r.name=p.name;
+    const at=p.ts||new Date().toISOString();
+    // 🆕 P1/P2) 발신 화면 원클릭 법정 기록 — 종류별 처리. lkey(ts+종류)로 재전송(펜딩 재플러시) 중복 방지
+    if(p.legal){
+      const lkey="L|"+(p.ts||"")+"|"+p.legal;
+      if(!applied[lkey]){
+        if(p.legal==="수신동의"){
+          // ✅ P6) 발신 화면에서 체크됨 → 이 고객에 동의 표시(consentAt) 저장. 메모엔 아무것도 안 씀.
+          r.consentAt=p.consentAt||at;
+          r.srcConsent=p.consentVia||"전화 동의"; if(!r.srcDate) r.srcDate=String(at).slice(0,10);
+          if(!r.srcState && r.srcPath) r.srcState="확인";   // 경로까지 있으면 확인으로 승격(경로 없으면 미분류 유지)
+          const me=loadMyName();
+          pushSrcLog(r,"수신동의","통화 중 구두 동의 · "+(p.consentVia||"전화 동의")+(me?" · 상담사 "+me:""));
+        } else if(p.legal==="수신동의 해제"){
+          // ✅ P6) 발신 화면에서 체크 해제 — 표시만 지우고 이력은 남긴다
+          r.consentAt="";
+          const me=loadMyName();
+          pushSrcLog(r,"수신동의 해제","표시 해제"+(me?" · 상담사 "+me:""));
+        } else if(p.legal==="증빙 녹음"){
+          // 🎙 통화 녹음이 PC 증빙 폴더로 이관됨 — 전체 경로는 로그에, 파일명은 증빙 메모에
+          pushSrcLog(r,"증빙 녹음",p.evidence||"");
+          const fn=String(p.evidence||"").split(/[\\/]/).pop();
+          if(fn) r.srcProof=(r.srcProof?r.srcProof+" · ":"")+"녹음 "+fn;
+        }
+        applied[lkey]=1;
+      }
+    }
+    if(status){ applyBujeCount(r,status); r.status=status; applyResultCadence(r,status); }   // 발신 결과 → 상태(+부재 횟수)+🆕 F1 케이던스 폴백(이미 지정된 날짜는 유지)
+    // 🆕 P3) 가망 팝업의 콜백 날짜·시간 — 상담사가 명시 지정한 약속이므로 케이던스보다 우선(덮어씀)
+    if(p.cbDate){ r.nextCall=p.cbDate; r.nextCallTime=p.cbTime||""; }
+    r.lastCall=todayStr(); r.lastCallAt=at;       // 통화 시점 → 최근통화(시간까지) 기록
+    // 실제로 타이핑한 메모만 반영 (결과·시각은 상태/최근통화에 있으니 메모엔 날짜를 안 씀)
+    const memo=(p.memo||"").trim();
+    // ⚠ 법정 이벤트 전용 신호(수신동의/해제·증빙 등 — 결과태그도 메모도 없음)는 '통화'가 아니다.
+    //    여기서 걸러내지 않으면 동의 토글을 누를 때마다 통화기록(callLog)이 늘어나 통화수 집계가 부풀려진다.
+    if(p.legal && !status && !memo) return true;
+    const key=p.ts||(p.number+"|"+status+"|"+memo);
+    if(!applied[key]){
+      if(memo){ r.memo = r.memo ? (memo+"\n"+r.memo) : memo; }
+      // 🆕 통화별 구조 로그(조회·통계용) — 기존 memo 앞붙이기(위 줄)는 그대로 두고 추가전용으로 쌓는다
+      if(!Array.isArray(r.callLog)) r.callLog=[];
+      r.callLog.push({ts:p.ts||Date.now(), tag:status||tag||"", memo:memo||"", dur:(p.dur==null?null:p.dur)});
+      applied[key]=1;
+    }
+    return true;
+  }
+  function applyBulk(items){
+    if(!Array.isArray(items)||!items.length) return;
+    let any=false; items.forEach(it=>{ if(applyOne(it)) any=true; });
+    if(any){ saveApplied(); save(); renderAll();
+      try{ if(document.getElementById("archiveModal").classList.contains("on")) renderArchive(); }catch(e){} }
+  }
+  function tellDrained(src){
+    try{ src&&src.postMessage({type:"tmcrm:drained"},"*"); }catch(e){}
+    try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"tmcrm:drained"},"*"); }catch(e){}
+  }
+
+  window.addEventListener("message",e=>{
+    const m=e.data||{};
+    // 발신 결과(부모→여기). 외부반영 플래그로 감싸 emitCust 재발신 차단(고객 목록 반영은 부모 bridge 가 별도 처리)
+    if(m.type==="tmcrm:bulk"){ applyingExternal=true; try{ applyBulk(m.items); } finally { applyingExternal=false; } tellDrained(e.source); }
+    else if(m.type==="tmcrm:one"){ applyingExternal=true; try{ applyBulk([m.item]); } finally { applyingExternal=false; } tellDrained(e.source); }
+    // 🔗 양방향 미러
+    else if(m.type==="tmcrm:cust-apply"){ applyCustFromParent(m); }        // 고객 목록 변경 → 여기 반영
+    else if(m.type==="tmcrm:req-all"){ replyAllCust(e.source); }           // 백필: 부모가 전체 고객 요청
+    else if(m.type==="tmcrm:req-full"){ replyFullCust(e.source); }         // 👥 발신 패널 고객 불러오기: 전체 고객(필터 필드 포함) 요청
+    else if(m.type==="tmcrm:backfill"){ applyBackfillCust(m.items); }      // 백필: 부모가 준 누락 고객 추가
+    else if(m.type==="tmcrm:restore"){ applyRestore(m.data); }             // 🔗 내구화 복원: store 백업 회신
+    else if(m.type==="tmcrm:optout-merge"){ mergeOptoutRemote(m.items); }  // 📱 LAN 동기화 수신거부 대장 병합(+해당 고객 파기)
+    // 🆕 서버 배정 연동
+    else if(m.type==="tmcrm:assign"){ applyAssign(m); }                    // 배정 결과(버튼 클릭 또는 부팅 시 자동으로도 옴)
+    else if(m.type==="tmcrm:role"){ applyRole(m); }                        // 내 역할(agent/master)
+    else if(m.type==="tmcrm:font"){ if(!hasFontScale()) saveFontScale(m.scale); }  // 구버전 부모 호환 시드: 내 설정(localStorage) 없을 때만 적용+저장
+    else if(m.type==="tmcrm:upload-done"){ applyUploadDone(m); }           // 「고객 서버로 보내기」 결과
+  });
+
+  // 📞 이 화면의 전화걸기 → 부모(콜파일럿 ADB 발신)로 위임. lastCall 스탬프는 기존 onclick이 처리.
+  document.addEventListener("click",e=>{
+    const a=e.target.closest("a.call, a.callmini");
+    if(!a) return;
+    const num=(a.getAttribute("href")||"").replace(/^tel:/,"");
+    const rr=state.customers.find(c=>digits(c.phone)===digits(num));
+    // 🆕 P1) 격리·발신금지 고객은 전화걸기 자체를 차단 (큐에서 제외돼 보통 안 보이지만 이중 안전장치)
+    if(rr&&isNoCall(rr)){ e.preventDefault(); e.stopPropagation();
+      toast("⛔ 발신금지 고객입니다 ("+(rr.optOutReason||"출처불명 격리")+") — 출처 상세에서 확인하세요"); return; }
+    // 🆕 P5) 회수돼 공용 풀에 있는 고객은 담당이 없으므로 발신 차단 (재배분 후에 걸어야 한다)
+    if(rr&&isPooled(rr)){ e.preventDefault(); e.stopPropagation();
+      toast("📤 회사 공용 풀 고객입니다 — 재배분 후에 연락하세요"); return; }
+    // 🆕 P5) 마지막 접촉 후 최소 간격 미경과 — 차단은 아니고 중복 접촉 주의 안내
+    if(rr){ const soonD=tooSoonToCall(rr);
+      if(soonD && rr.prevOwner) toast(`⚠️ 이전 담당 ${rr.prevOwner} 이(가) 최근 접촉한 고객입니다 — 최소 간격까지 ${soonD}일 남음`); }
+    if(window.parent&&window.parent!==window){
+      e.preventDefault();
+      window.parent.postMessage({type:"tmcrm:dial",number:num,name:(rr&&rr.name)||""},"*");
+      toast("📞 콜파일럿 발신으로 넘김 · "+num);
+    }
+  },true);
+
+  // ✏️ 콜 큐에서 고객 클릭(또는 ✏️ 버튼) → 고객 DB 탭으로 전환해 바로 수정 (전화 버튼 클릭은 제외)
+  document.addEventListener("click",e=>{
+    const tr=e.target.closest("#queueTable tbody tr[data-uid]");
+    if(!tr) return;
+    if(e.target.closest("a.callmini")) return;
+    editFromQueue(+tr.dataset.uid);
+  },true);
+
+  // ============================================================
+  //  📇 TM 고객관리 자체 튜토리얼 (스포트라이트) — 버튼을 하나씩 안내
+  // ============================================================
+  (function(){
+    const JT_KEY='jip_tut_done';
+    const JSTEPS=[
+      {center:true,title:'📇 TM 고객관리 사용법',body:'여기는 고객을 자세히 관리하는 화면이에요. 발신 패널에서 남긴 통화 결과가 자동으로 이 고객들에 반영됩니다. 버튼을 하나씩 짚어드릴게요!',next:'시작하기'},
+      {sel:'nav',title:'상단 3개 탭',body:'화면은 3개 탭으로 나뉘어요.\n• 오늘 콜 — 오늘 연락할 사람\n• 고객 DB — 전체 고객 표\n• 대시보드 — 성과 통계'},
+      {tab:'today',sel:'#v-today',title:'📅 오늘 콜',body:'오늘·놓친 콜백과 지금 집중할 고객이 모여요. 여기서 바로 전화(📞)를 걸 수 있어요.'},
+      {tab:'db',sel:'#search',title:'🔎 검색',body:'번호·이름·메모로 고객을 빠르게 찾아요.'},
+      {tab:'db',sel:'#fStatus',title:'상태 · 출처 필터',body:'상태별로 걸러봐요. 바로 옆 「출처」 필터로는 미분류·격리·발신금지 고객만 모아서 볼 수 있어요(개인정보보호법 대응).'},
+      {tab:'db',sel:'#dbTable',title:'고객 표에서 직접 수정',body:'각 고객의 상태·등급·다음 연락일·상담자는 표에서 바로 고칠 수 있어요.\n콜러는 로그인한 계정 이름이 자동으로 들어가고, 메모는 발신 결과에서 자동 기록돼요(둘 다 직접 수정·삭제 불가).'},
+      {tab:'dash',sel:'#v-dash',title:'📊 대시보드',body:'통화→연결→가망→예약→방문→계약 전환율과 상태 분포, 월별·일별 성과를 한눈에 봐요.'},
+      {tab:'today',sel:'#btnManage',title:'⚙️ 관리 · 🔄 배정 받기',body:'보관함(삭제 복구), DB 출처 관리, 글씨 크기 조절이 「⚙️ 관리」 메뉴 안에 모여 있어요. 수신거부·차단 번호는 자동으로 파기되고 재발신 방지 목록으로만 관리됩니다. 「🔄 배정 받기」를 누르면 서버에서 나에게 배정된 고객을 받아올 수 있어요.'},
+      {center:true,title:'✅ 다 봤어요!',body:'발신은 왼쪽 콜파일럿, 자세한 관리는 여기 TM 고객관리 — 이렇게 나눠 쓰시면 돼요. 이 안내는 위 「❓ 사용법」에서 언제든 다시 볼 수 있어요.',next:'마치기'},
+    ];
+    let jidx=0, jroot=null, jResize=null, jKey=null;
+    function jStyle(){
+      if(document.getElementById('jtut-style'))return;
+      const s=document.createElement('style'); s.id='jtut-style';
+      s.textContent='.jtut-root{position:fixed;inset:0;z-index:2147483000;pointer-events:none}'
+        +'.jtut-dim{position:fixed;inset:0;background:rgba(0,0,0,.72);pointer-events:auto}'
+        +'.jtut-spot{position:fixed;border-radius:10px;border:2px solid var(--gold,#d4a373);box-shadow:0 0 0 9999px rgba(0,0,0,.72),0 0 0 4px rgba(212,163,115,.35);pointer-events:none;transition:all .18s ease}'
+        +'.jtut-tip{position:fixed;width:340px;max-width:calc(100vw - 32px);background:#1f242c;border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.6);padding:16px 18px 14px;color:#eef2f7;pointer-events:auto}'
+        +'.jtut-tit{font-size:15px;font-weight:800;margin-bottom:8px;color:#ffd9b0}'
+        +'.jtut-body{font-size:13px;line-height:1.65;white-space:pre-wrap;color:#dbe2ea}'
+        +'.jtut-foot{display:flex;align-items:center;gap:8px;margin-top:14px}'
+        +'.jtut-step{font-size:11px;color:#9aa4b0;margin-right:auto}'
+        +'.jtut-btn{padding:7px 13px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eee}'
+        +'.jtut-btn:hover{background:rgba(255,255,255,.12)}'
+        +'.jtut-btn.primary{background:linear-gradient(135deg,#d4a373,#c96442);color:#1a1205;border:none}'
+        +'.jtut-btn.ghost{background:transparent;border:none;color:#9aa4b0}';
+      document.head.appendChild(s);
+    }
+    function jClean(){ if(jroot){jroot.remove();jroot=null;} if(jResize){window.removeEventListener('resize',jResize);jResize=null;} if(jKey){document.removeEventListener('keydown',jKey);jKey=null;} }
+    function jFinish(){ jClean(); try{localStorage.setItem(JT_KEY,'1');}catch(e){} }
+    function jGo(n){ jidx=n; if(jidx<0)jidx=0; if(jidx>=JSTEPS.length){jFinish();return;} jRender(); }
+    function jRender(){
+      if(!jroot)return; const step=JSTEPS[jidx];
+      if(step.tab){ const nb=document.querySelector('nav button[data-tab="'+step.tab+'"]'); if(nb) nb.click(); }
+      const dim=jroot.querySelector('.jtut-dim'), spot=jroot.querySelector('.jtut-spot'), tip=jroot.querySelector('.jtut-tip');
+      let rect=null; if(step.sel){ const el=document.querySelector(step.sel); if(el) rect=el.getBoundingClientRect(); }
+      if(rect&&rect.width>0&&rect.height>0){ dim.style.display='none'; const pad=6; spot.style.display='block';
+        spot.style.left=Math.max(2,rect.left-pad)+'px'; spot.style.top=Math.max(2,rect.top-pad)+'px';
+        spot.style.width=Math.min(window.innerWidth-4,rect.width+pad*2)+'px'; spot.style.height=Math.min(window.innerHeight-4,rect.height+pad*2)+'px';
+      } else { spot.style.display='none'; dim.style.display='block'; }
+      tip.querySelector('.jtut-tit').textContent=step.title;
+      tip.querySelector('.jtut-body').textContent=step.body;
+      tip.querySelector('.jtut-step').textContent=(jidx+1)+' / '+JSTEPS.length;
+      tip.querySelector('.jtut-prev').style.visibility=jidx===0?'hidden':'visible';
+      tip.querySelector('.jtut-next').textContent=step.next||(jidx===JSTEPS.length-1?'마치기':'다음 ▸');
+      tip.style.visibility='hidden';
+      requestAnimationFrame(()=>{ const tw=tip.offsetWidth,th=tip.offsetHeight; let left,top;
+        if(rect&&rect.width>0){ left=rect.left+rect.width/2-tw/2; top=rect.bottom+14; if(top+th>window.innerHeight-8)top=rect.top-th-14; if(top<8)top=8; }
+        else { left=window.innerWidth/2-tw/2; top=window.innerHeight/2-th/2; }
+        left=Math.max(8,Math.min(left,window.innerWidth-tw-8)); tip.style.left=left+'px'; tip.style.top=top+'px'; tip.style.visibility='visible';
+      });
+    }
+    function jStart(){
+      jClean(); jStyle(); jidx=0;
+      jroot=document.createElement('div'); jroot.className='jtut-root';
+      jroot.innerHTML='<div class="jtut-dim"></div><div class="jtut-spot"></div>'
+        +'<div class="jtut-tip"><div class="jtut-tit"></div><div class="jtut-body"></div>'
+        +'<div class="jtut-foot"><span class="jtut-step"></span>'
+        +'<button class="jtut-btn ghost jtut-skip">건너뛰기</button>'
+        +'<button class="jtut-btn jtut-prev">◂ 이전</button>'
+        +'<button class="jtut-btn primary jtut-next">다음 ▸</button></div></div>';
+      document.body.appendChild(jroot);
+      jroot.querySelector('.jtut-skip').onclick=jFinish;
+      jroot.querySelector('.jtut-prev').onclick=()=>jGo(jidx-1);
+      jroot.querySelector('.jtut-next').onclick=()=>jGo(jidx+1);
+      jResize=()=>jRender(); window.addEventListener('resize',jResize);
+      jKey=(e)=>{ if(e.key==='Escape')jFinish(); else if(e.key==='ArrowRight')jGo(jidx+1); else if(e.key==='ArrowLeft')jGo(jidx-1); };
+      document.addEventListener('keydown',jKey);
+      jRender();
+    }
+    window.__jipTutorial=jStart;
+    const hb=document.getElementById('btnHelp'); if(hb) hb.onclick=()=>jStart();
+    // 🆕 P3) '폰 차단번호 가져오기' 폐지 — 차단 번호는 DB에 두지 않는다(blocklist·수신거부 대장으로만 발신 차단)
+    // 부모(콜파일럿 튜토리얼)가 열면서 안내 시작을 요청할 수 있음
+    window.addEventListener('message',e=>{ if(e.data&&e.data.type==='tmcrm:tutorial'&&!jroot) jStart(); });
+    // 처음 열었을 때 자동 안내
+    let jdone=false; try{ jdone=localStorage.getItem(JT_KEY)==='1'; }catch(e){}
+    if(!jdone) setTimeout(()=>{ if(!jroot) jStart(); }, 600);
+  })();
+
+  // 준비 완료 → 부모가 대기 중이던 발신결과들을 보내줌
+  try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"tmcrm:ready"},"*"); }catch(e){}
+})();
+</script>
+</body>
+</html>
