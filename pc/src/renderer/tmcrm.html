@@ -444,6 +444,15 @@
         <span style="font-size:12.5px;color:var(--muted)">기본값은 「⚙️ 관리 → 👤 내 이름 설정」에 저장한 내 이름입니다. 지금 추가하는 고객 전체에 같은 담당자가 적용됩니다.</span>
       </div>
       <textarea id="addBox" placeholder="24318218&#10;86694716&#10;6664 6235, 김국성"></textarea>
+      <!-- 🆕 보관함 중복 안내 — '삭제'는 보관함 이동(비파괴)이라, 다 지우고 같은 번호를 다시 넣으면
+           전부 '중복'으로 막히고 [추가] 버튼까지 잠긴다. 왜 막혔는지 보여주고 원클릭으로 풀어준다. -->
+      <div id="addArchBox" style="display:none;margin:11px 0 0;padding:12px 14px;border:1px solid var(--warn);
+        border-radius:9px;background:rgba(232,168,74,.10);font-size:13px;line-height:1.6;color:var(--ink)">
+        <div style="margin-bottom:9px">🗄 <b id="addArchN">0</b>명은 <b>보관함(전에 삭제한 고객)</b>에 남아 있어서 중복으로 막혔습니다.
+          <span style="color:var(--muted)">고객관리에서 '삭제'하면 완전히 지워지지 않고 보관함으로 옮겨집니다.</span></div>
+        <button class="btn gold" id="addArchRestore" style="font-size:13px">🗄 보관함에서 복구 (메모·상태 그대로)</button>
+        <button class="btn" id="addArchPurge" style="font-size:13px;margin-left:7px">완전삭제하고 새로 등록</button>
+      </div>
       <div class="add-foot">
         <span class="prev" id="addPreview"></span>
         <span style="flex:1"></span>
@@ -2391,8 +2400,11 @@ function parseAddList(text){
   const pfxEl=document.getElementById("addPrefix");
   const pfx=(pfxEl?pfxEl.value:"010").trim();
   const isPlain = (pfx===""||pfx==="010");   // 표준 010 휴대폰
-  const existing=new Set(state.customers.concat(state.archive).map(r=>digits(r.phone)));
-  const seen=new Set(); const res={ok:[],dup:0,bad:0,opt:0};   // 🆕 P3) opt=수신거부 이력이라 제외된 수
+  // 🆕 중복은 '현재 목록'과 '보관함'을 갈라서 본다 — 보관함은 막기만 하지 말고 복구/완전삭제를 제안(아래 addArchBox)
+  const activeSet=new Set(state.customers.map(r=>digits(r.phone)));
+  const archMap=new Map(); state.archive.forEach(r=>{ const k=digits(r.phone); if(k&&!archMap.has(k)) archMap.set(k,r); });
+  const archSeen=new Set();
+  const seen=new Set(); const res={ok:[],dup:0,bad:0,opt:0,arch:[]};   // 🆕 P3) opt=수신거부 이력이라 제외된 수 · arch=보관함에 있어 막힌 기록들
   text.split(/[\n\r]+/).forEach(line=>{
     line=line.trim(); if(!line)return;
     let name="",phonePart=line;
@@ -2403,7 +2415,8 @@ function parseAddList(text){
     if(d.length!==11){res.bad++;return;}
     const full = isPlain ? `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}` : `${pfx}${d}`;
     const key = digits(full);   // 접두(*,# 제외한 숫자)로 중복 판정
-    if(seen.has(key)||existing.has(key)){res.dup++;return;}
+    if(seen.has(key)||activeSet.has(key)){res.dup++;return;}
+    if(archMap.has(key)){ res.dup++; if(!archSeen.has(key)){archSeen.add(key);res.arch.push(archMap.get(key));} return; }   // 🆕 보관함 중복
     if(optoutHas(key)){res.opt++;return;}   // 🆕 P3) 수신거부 이력 번호는 재등록 금지
     seen.add(key);
     res.ok.push({phone:full,name});
@@ -2412,14 +2425,42 @@ function parseAddList(text){
 }
 /* 🆕 P1) 신규 등록 시 출처 필수 — 수집 경로·동의 방식 미기재면 저장 차단(개인정보보호법 제20조) */
 function addSrcOk(){ return true; }   // 출처 입력 제거(2026-08-01) — 전화하며 「DB 출처 관리」로 분류하므로 등록은 항상 허용
+let lastAddArch=[];   // 🆕 지금 입력분 중 '보관함에 있어서' 막힌 기록들 — 복구/완전삭제 버튼이 쓴다
 function updateAddPreview(){
   const r=parseAddList(document.getElementById("addBox").value);
   const srcOk=addSrcOk();
+  lastAddArch=r.arch;
   document.getElementById("addPreview").innerHTML=
-    `추가 <b>${r.ok.length}</b>명`+(r.dup?` · 중복 ${r.dup} 제외`:"")+(r.bad?` · 형식오류 ${r.bad}`:"")
+    `추가 <b>${r.ok.length}</b>명`
+    +(r.dup?` · 중복 ${r.dup} 제외`+(r.arch.length?` <span style="color:var(--warn);font-weight:800">(그중 보관함 ${r.arch.length})</span>`:""):"")
+    +(r.bad?` · 형식오류 ${r.bad}`:"")
     +(r.opt?` · <span style="color:var(--danger)">수신거부 이력 ${r.opt} 제외</span>`:"")
     +(srcOk?"":` · <span style="color:var(--danger);font-weight:800">⚠️ 출처 미기재 — 저장 불가</span>`);
+  const ab=document.getElementById("addArchBox");   // 🆕 보관함 때문에 막혔으면 이유와 해결 버튼을 띄운다
+  if(ab){ ab.style.display=r.arch.length?"block":"none";
+    const an=document.getElementById("addArchN"); if(an) an.textContent=r.arch.length; }
   document.getElementById("addConfirm").disabled=r.ok.length===0||!srcOk;
+}
+/* 🆕 보관함에 있어 막힌 번호 풀어주기 — '삭제=보관함 이동'이라 다 지우고 같은 번호를 다시 넣으면
+   전부 중복으로 막히던 문제. 복구(권장)와 완전삭제 둘 다 제공한다. */
+function restoreFromAdd(){
+  const rows=lastAddArch.slice(); if(!rows.length)return;
+  const ids=new Set(rows.map(r=>r.uid));
+  state.archive=state.archive.filter(r=>!ids.has(r.uid));
+  state.customers=rows.concat(state.customers);
+  save(); rows.forEach(r=>emitCust(r,"upsert")); renderAll(); updateAddPreview();   // 🔗 복구 → 고객 목록 복귀
+  toast(`보관함에서 ${rows.length}명 복구 — 예전 메모·상태 그대로 돌아왔습니다`);
+}
+function purgeFromAdd(){
+  const rows=lastAddArch.slice(); if(!rows.length)return;
+  if(!confirm(`보관함에 있는 ${rows.length}명을 완전히 삭제합니다.
+예전 메모·상태는 복구할 수 없고, 같은 번호를 새 고객으로 등록하게 됩니다.
+
+진행할까요?`))return;
+  const ids=new Set(rows.map(r=>r.uid));
+  state.archive=state.archive.filter(r=>!ids.has(r.uid));
+  save(); renderAll(); updateAddPreview();
+  toast(`${rows.length}명 완전삭제 — 이제 추가할 수 있습니다`);
 }
 function doAdd(){
   const r=parseAddList(document.getElementById("addBox").value);
@@ -2526,6 +2567,8 @@ function initEvents(){
   document.getElementById("closeAdd").onclick=closeAdd;
   document.getElementById("cancelAdd").onclick=closeAdd;
   document.getElementById("addBox").oninput=updateAddPreview;
+  const arB=document.getElementById("addArchRestore"); if(arB) arB.onclick=restoreFromAdd;   // 🆕 보관함 복구
+  const apB=document.getElementById("addArchPurge");   if(apB) apB.onclick=purgeFromAdd;     // 🆕 보관함 완전삭제
   document.getElementById("addPrefix").oninput=updateAddPreview;
   // 🆕 P1) 출처 필수 select 가 바뀔 때도 미리보기·저장 버튼 상태 갱신 (널가드 — 요소 제거 시 바인딩 전체가 죽는 함정 방지)
   const _sp=document.getElementById("addSrcPath"); if(_sp) _sp.onchange=updateAddPreview;

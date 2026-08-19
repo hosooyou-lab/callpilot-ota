@@ -7,8 +7,10 @@
 /* ============================================================
    education.html — 콜파일럿 「교육」 창 (노션 대체)
    ------------------------------------------------------------
-   · 노션이 하던 5가지를 그대로 옮김:
-     ①12세션 저장소 ②콜 라이브러리 ③세션 진도 ④주간 지표 ⑤MY DREAM
+   · 지금 쓰는 메뉴: 콜 라이브러리 · 주간 지표 · MY DREAM · 교육생 관리
+   · 2026-08-16: 12세션 과정 폐지로 「12세션 저장소」·「세션 진도」 두 메뉴를 nav에서 감춤
+     (버튼의 style="display:none"만 지우면 복구. 데이터 D.sessions·D.progress는 손대지 않음)
+     신입 교육은 종이 6일 시트로 이동 — E:\로엔기획\로엔_교육_통합_260808\05_1주차_온보딩
    · 권한: crm.me().role
        master(교육담당) = 전원 조회·편집
        agent(상담사)    = 본인 진도·지표·MY DREAM만, 세션/라이브러리는 열람
@@ -174,9 +176,11 @@ td input{padding:4px 6px;font-size:12px}
   <nav class="nav" id="nav">
     <button data-sec="help">❓ 도움말 · 처음 오셨나요</button>
     <div class="sep"></div>
-    <button data-sec="sessions" class="on">📚 12세션 저장소</button>
-    <button data-sec="calllib">🎧 콜 라이브러리</button>
-    <button data-sec="progress">✅ 세션 진도</button>
+    <!-- 2026-08-16 12세션 과정 폐지로 두 메뉴를 감춰둡니다.
+         기록은 지우지 않았습니다 — 아래 두 줄의 style="display:none"만 지우면 예전 그대로 돌아옵니다. -->
+    <button data-sec="sessions" style="display:none">📚 12세션 저장소</button>
+    <button data-sec="progress" style="display:none">✅ 세션 진도</button>
+    <button data-sec="calllib" class="on">🎧 콜 라이브러리</button>
     <button data-sec="weekly">📈 주간 지표</button>
     <button data-sec="dream">🌱 MY DREAM</button>
     <div class="sep"></div>
@@ -192,8 +196,12 @@ td input{padding:4px 6px;font-size:12px}
       <div class="sub">위에서부터 순서대로 따라 하시면 됩니다. 5분이면 끝납니다.</div>
 
       <div class="lead">이 창은 <b>신입 교육을 관리하는 곳</b>입니다.
-        세션마다 뭘 준비할지 체크하고, 누가 어디까지 배웠는지 기록하고, 주간 숫자를 남깁니다.
-        예전에 노션으로 하던 일을 여기서 합니다.</div>
+        잘된 콜을 사례로 쌓고, 주간 숫자를 남기고, 각자의 MY DREAM을 보관합니다.
+        예전에 노션으로 하던 일을 여기서 합니다.
+        <br><b>2026년 8월부터 12세션 과정은 쓰지 않습니다</b> — 신입 교육은
+        <b>첫 6일 온보딩(교육담당) → 2주차부터 대표님 직접</b>으로 바뀌었고,
+        그 6일은 종이 시트로 굴립니다(<b>E:\로엔기획\로엔_교육_통합_260808\05_1주차_온보딩</b>).
+        그래서 「12세션 저장소」·「세션 진도」 메뉴는 감춰뒀습니다. 예전 기록은 지우지 않았습니다.</div>
 
       <h2>1단계 · 처음 한 번만 하면 되는 것</h2>
       <ol class="steps">
@@ -207,31 +215,25 @@ td input{padding:4px 6px;font-size:12px}
           여기에 넣은 사람이 진도·주간 지표·MY DREAM 화면에 나타납니다.
           <b>가르치는 사람마다 자기가 맡은 수강생만</b> 넣으면 됩니다.</span></div></li>
 
-        <li><div><span class="b">실행킷 폴더가 맞는지 확인합니다</span>
-          <span class="m"><b>「12세션 저장소」</b> 맨 위 칸입니다.
-          이 폴더를 기준으로 아래 「진행표」·「워크북」 버튼이 파일을 찾습니다.
-          폴더를 옮기셨다면 여기만 고치면 됩니다.</span></div></li>
       </ol>
 
-      <h2>2단계 · 세션을 진행할 때</h2>
+      <h2>2단계 · 신입이 오면 (첫 6일)</h2>
       <ol class="steps">
-        <li><div><span class="b">세션 전날 — 준비물을 체크합니다</span>
-          <span class="m"><b>「12세션 저장소」</b>에서 해당 세션(S1~S12)을 찾습니다.
-          준비물이 이미 적혀 있으니 챙기면서 하나씩 체크하세요. 위에 <b>3 / 6</b>처럼 몇 개 남았는지 나옵니다.
-          빠진 게 있으면 맨 아래 칸에 적고 <span class="kbd">Enter</span>, 필요 없는 건 오른쪽 <b>×</b>로 지웁니다.</span></div></li>
+        <li><div><span class="b">교육은 이 창이 아니라 종이 시트로 굴립니다</span>
+          <span class="m"><b>E:\로엔기획\로엔_교육_통합_260808\05_1주차_온보딩</b> 폴더를 엽니다.
+          아침마다 <b>「NN일차_오늘치.html」</b>을 인쇄해 그대로 실행하고,
+          그날 쓸 서류는 <b>00_서류\NN일차\</b> 폴더에 다 들어 있습니다.
+          처음이면 그 폴더의 <b>00_이_폴더_읽는법.txt</b>부터 읽으세요.</span></div></li>
 
-        <li><div><span class="b">세션 당일 — 「진행표」 버튼을 누릅니다</span>
-          <span class="m">세션 제목 오른쪽의 <b>📄 진행표</b>를 누르면 그 세션의 대본이 열립니다.
-          00:00부터 01:30까지 몇 분에 뭘 하는지 다 적혀 있습니다. <b>📗 워크북</b>은 교육생용입니다.</span></div></li>
+        <li><div><span class="b">2주차부터는 대표님께 넘깁니다</span>
+          <span class="m">6일차에 <b>F17 면담</b>을 하고 <b>인계 카드</b>를 적어 대표님께 드립니다.
+          현장·상품 브리핑, 실제 상담 동행, 세일즈 스킬, <b>법정교육(개인정보 취급)과 실제 고객 DB 배정</b>은 전부 2주차 대표님 몫입니다.
+          <b>1주차에는 신입이 실제 고객에게 전화를 걸지 않습니다.</b></span></div></li>
 
-        <li><div><span class="b">세션이 끝나면 — 통과 여부를 찍습니다</span>
-          <span class="m">왼쪽 <b>「세션 진도」</b>에서 그 사람 줄의 해당 칸을 누르면 통과(✓)로 바뀝니다.
-          <b>S1과 S4를 둘 다 통과해야 실제 고객 DB를 배정</b>할 수 있고, 그러면 「DB 배정」 칸이 <b>가능</b>으로 바뀝니다.</span></div></li>
-
-        <li><div><span class="b">그날 겪은 걸 남깁니다</span>
-          <span class="m">세션 카드 맨 아래 <b>「진행 메모」</b>에 적습니다.
-          "시간이 10분 모자랐다", "이 예시가 잘 먹혔다" 같은 것들요.
-          다음 기수 때 이 메모가 제일 도움이 됩니다.</span></div></li>
+        <li><div><span class="b">이 창에는 무엇을 남기나</span>
+          <span class="m">잘된 콜은 <b>「콜 라이브러리」</b>에, 주에 한 번 숫자는 <b>「주간 지표」</b>에,
+          첫날 받은 MY DREAM은 <b>「MY DREAM」</b>에 옮겨 적습니다.
+          <b>진도 체크는 종이(F08 마감10·F04 셰도잉 관찰지)로 합니다</b> — 이 창에 따로 찍지 않습니다.</span></div></li>
       </ol>
 
       <h2>3단계 · 주에 한 번</h2>
@@ -248,13 +250,14 @@ td input{padding:4px 6px;font-size:12px}
       <h2>메뉴가 하는 일</h2>
       <table>
         <tr><th style="width:130px">메뉴</th><th>하는 일</th></tr>
-        <tr><td><b>12세션 저장소</b></td><td>세션마다 준비물 체크 · 통과 기준 · 진행 메모. 진행표·워크북 바로 열기</td></tr>
         <tr><td><b>콜 라이브러리</b></td><td>잘된 콜 사례 모음. 제목·대사·태그로 검색</td></tr>
-        <tr><td><b>세션 진도</b></td><td>누가 S1~S12 중 어디까지 통과했는지. DB 배정 가능 여부 자동 표시</td></tr>
         <tr><td><b>주간 지표</b></td><td>주차별 콜·예약·방문·계약과 전환율</td></tr>
         <tr><td><b>MY DREAM</b></td><td>이 일을 하는 이유 3줄. 흔들릴 때 꺼내 보는 용도</td></tr>
         <tr><td><b>교육생 관리</b></td><td>내가 가르칠 사람 등록·삭제 (교육담당만 보입니다)</td></tr>
       </table>
+      <div class="tipbox" style="margin-top:8px"><b>「12세션 저장소」·「세션 진도」는 감춰뒀습니다.</b>
+        2026년 8월부터 12세션 과정을 쓰지 않기 때문입니다. <b>예전 기록은 지우지 않았습니다</b> —
+        다시 보셔야 하면 education.html에서 그 두 버튼의 <b>style="display:none"</b>만 지우면 그대로 돌아옵니다.</div>
 
       <h2>꼭 알아두실 것</h2>
       <div class="tipbox"><b>저장 버튼이 없습니다.</b> 입력하는 즉시 저장됩니다.
@@ -266,19 +269,19 @@ td input{padding:4px 6px;font-size:12px}
 
       <h2>막히면</h2>
       <p>이 창은 <span class="kbd">Ctrl</span> + <span class="kbd">3</span> 으로 언제든 다시 열 수 있습니다.
-        교육 일정·서류 규칙은 30일 플랜 폴더의 <b>00_지금상태_한장요약.html</b>과
-        <b>README_먼저읽기.txt</b>에 정리돼 있습니다.</p>
+        교육 일정·서류 규칙은 <b>E:\로엔기획\로엔_교육_통합_260808</b> 의
+        <b>00_여기부터_시작.txt</b>, 그리고 <b>05_1주차_온보딩\00_이_폴더_읽는법.txt</b> 에 정리돼 있습니다.</p>
     </section>
 
-    <!-- ① 12세션 저장소 -->
-    <section class="sec on" id="sec-sessions">
-      <h1>12세션 저장소</h1>
-      <div class="sub">세션마다 목표·통과기준·자료를 한곳에. 교육담당이 채우고 상담사는 열람합니다.</div>
+    <!-- ① 12세션 저장소 — 2026-08-16 폐지, 메뉴에서 감춤(기록은 그대로 남아 있음) -->
+    <section class="sec" id="sec-sessions">
+      <h1>12세션 저장소 <span style="font-size:12px;color:var(--text-3);font-weight:400">· 지금은 쓰지 않는 화면입니다</span></h1>
+      <div class="sub">2026년 8월부터 12세션 과정을 쓰지 않습니다. 신입 교육은 <b>첫 6일 온보딩(교육담당) → 2주차부터 대표님</b>으로 바뀌었습니다. 예전 기록을 보려고 남겨둔 화면입니다.</div>
       <div id="sessionList"></div>
     </section>
 
     <!-- ② 콜 라이브러리 -->
-    <section class="sec" id="sec-calllib">
+    <section class="sec on" id="sec-calllib">
       <h1>콜 라이브러리</h1>
       <div class="sub">잘된 콜을 사례로 쌓는 곳. 상황과 실제 대사를 그대로 남깁니다.</div>
 
@@ -307,10 +310,10 @@ td input{padding:4px 6px;font-size:12px}
 
     <!-- ③ 세션 진도 -->
     <section class="sec" id="sec-progress">
-      <h1>세션 진도</h1>
-      <div class="sub" id="progSub">S1~S12 통과 여부. 칸을 누르면 통과/미통과가 바뀝니다.</div>
+      <h1>세션 진도 <span style="font-size:12px;color:var(--text-3);font-weight:400">· 지금은 쓰지 않는 화면입니다</span></h1>
+      <div class="sub" id="progSub">2026년 8월부터 12세션 과정을 쓰지 않습니다. 예전 기록을 보려고 남겨둔 화면입니다.</div>
       <div class="scroll"><table id="progTable"></table></div>
-      <div class="muted" style="margin-top:9px">※ S1·S4를 통과해야 실제 고객 DB 배정이 가능합니다(배정 게이트).</div>
+      <div class="muted" style="margin-top:9px">※ 표 안의 <b>「DB 배정」 칸은 더 이상 기준이 아닙니다.</b> 지금은 <b>2주차에 대표님이 법정교육(개인정보 취급)을 진행하신 뒤에</b> 실제 고객 DB를 배정합니다. 1주차에는 배정하지 않습니다.</div>
     </section>
 
     <!-- ④ 주간 지표 -->
@@ -937,8 +940,8 @@ function applyRole() {
 
   if (!isMaster()) {
     document.getElementById('navhint').textContent =
-      '상담사 화면입니다. 진도·지표·MY DREAM은 본인 것만 보이고, 세션 자료와 콜 라이브러리는 열람만 됩니다.';
-    document.getElementById('progSub').textContent = '내 S1~S12 통과 현황입니다. 수정은 교육담당이 합니다.';
+      '상담사 화면입니다. 지표·MY DREAM은 본인 것만 보이고, 콜 라이브러리는 열람만 됩니다.';
+    document.getElementById('progSub').textContent = '지금은 쓰지 않는 화면입니다(12세션 과정 폐지). 예전 기록만 보입니다.';
     document.getElementById('weekSub').textContent = '내 주차별 콜·예약·방문·계약입니다.';
     document.getElementById('dreamSub').textContent = '이 일을 하는 이유 3줄. 본인이 직접 씁니다.';
   } else {
