@@ -12,9 +12,14 @@
     { id: 'sidebar', sel: '.sidebar', label: '📌 단지·고객', w: 220, min: 190, grow: false },
     { id: 'memo', sel: '.memo-area', label: '💬 멘트·빠른대응', w: 380, min: 300, grow: false },
     { id: 'cards', sel: '.card-panel', label: '📋 스크립트', w: 340, min: 280, grow: true },
-    { id: 'crm', sel: '#crm-root', label: '🗂 콜 관리', w: 520, min: 320, grow: false },
+    { id: 'crm', sel: '#crm-root', label: '🗂 콜 관리', w: 520, min: 260, grow: false },
   ];
   // 패널 최소폭 (이 밑으로는 못 줄임 → 서로 공간 침범/내용 잘림 방지)
+  // 📐 콜 관리 260px 근거(2026-09-10 실측): 340/320/300/280/260/240 여섯 폭을 실제로 렌더해 확인.
+  //    240px 에서 상단 탭 5개(오늘·고객DB·캘린더·현황·고객관리)가 전부 잘려 못 쓴다. 260px 까지는
+  //    가로스크롤·요소겹침·탭잘림이 없다. 그래서 안전 하한 = 260. 화면이 좁은 PC(또는 화면배율을
+  //    올려둔 PC)에서 이 패널이 320 에 닿아 드래그가 아예 안 먹던 문제 때문에 320 → 260 으로 내렸다.
+  //    (min 은 '하한'일 뿐이라 넓게 쓰는 사람에겐 아무 영향이 없다.)
   function panelMin(id) { const p = PANELS.find(x => x.id === id); return (p && p.min) || 160; }
   // ============================================================
   //  📏 픽셀 고정 레이아웃 (cfg.widths = '비율'이 아니라 '실제 px')
