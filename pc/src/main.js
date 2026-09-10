@@ -377,9 +377,41 @@ ipcMain.handle('crmlogin:submit', async (e, loginIdRaw, passwordRaw, remember) =
   if (crmLoginWin) { const w = crmLoginWin; crmLoginWin = null; try { w.close(); } catch (x) {} }
   startMainApp();
   startCrmRevalidation();   // 🔒 로그인 후 15분마다 계정 상태 재확인(차단되면 즉시 로그아웃)
+  startDeviceLink();        // 🔗 내 LAN 주소를 서버에 등록 — 폰이 같은 아이디로 자동으로 찾아온다
   return { ok: true };
 });
 ipcMain.handle('crmlogin:quit', () => app.quit());
+
+// ── 🔗 계정 기반 기기 자동연결 (C안 1단계) ──
+// 같은 아이디로 로그인한 폰이 이 PC를 IP·코드 입력 없이 찾아오게, 내 LAN 주소를 서버에 올려둔다.
+// 올라가는 건 사설 LAN 주소·포트·페어링코드뿐 — 고객·통화기록·메모는 한 건도 올리지 않는다.
+// 서버 RLS 가 auth.uid() 로 잠그므로 남의 주소는 보이지 않고, 실패해도 기존 수동 IP 입력 경로는 그대로 살아 있다.
+let lanInfo = null;          // sync-server 가 listen 성공 때 넘겨주는 { ip, port, code }
+let devLinkTimer = null;
+async function registerDevice() {
+  if (!crmSession || !crmSession.access_token || !crmSession.user_id) return { ok: false, reason: 'nosession' };
+  if (!lanInfo || !lanInfo.ip) return { ok: false, reason: 'nolan' };
+  const row = {
+    user_id: crmSession.user_id,
+    kind: 'pc',
+    host: lanInfo.ip,
+    port: lanInfo.port || 8787,
+    pair_code: lanInfo.code || '',
+    label: (function () { try { return os.hostname(); } catch (e) { return ''; } })(),
+    updated_at: new Date().toISOString()
+  };
+  const r = await supaReq('POST', 'cp_devices?on_conflict=user_id,kind', [row], {
+    'Authorization': 'Bearer ' + crmSession.access_token,
+    'Prefer': 'resolution=merge-duplicates,return=minimal'
+  });
+  return { ok: !!r.ok, status: r.status };
+}
+// 로그인 직후 1회 + 5분마다 갱신 — 공유기 재접속 등으로 IP 가 바뀌어도 폰이 따라온다.
+function startDeviceLink() {
+  if (devLinkTimer) clearInterval(devLinkTimer);
+  registerDevice();
+  devLinkTimer = setInterval(() => { registerDevice(); }, 5 * 60 * 1000);
+}
 
 // ── Phase2: 서버에서 내 배정 고객 가져오기 ──
 // crmSession 은 메모리에만 있고(자동로그인 안 함) 토큰은 절대 렌더러로 넘기지 않는다 — main 안에서만 사용.
@@ -1231,7 +1263,13 @@ app.whenReady().then(async () => {
   try { registerDialer(ipcMain, store, app, path.join(__dirname, '..'), () => mainWindow, dialog); }
   catch (e) { console.error('다이얼러 등록 실패:', e); }
   // 📱 같은 wifi LAN 동기화 서버(폰 콜파일럿과 고객·통화기록 동기화) — 실패해도 앱 본체 영향 없음
-  try { require('./sync-server').startSyncServer(store, () => mainWindow, { getActivation: ownActivation, acceptActivation: acceptSharedActivation }); }
+  try {
+    require('./sync-server').startSyncServer(store, () => mainWindow, {
+      getActivation: ownActivation, acceptActivation: acceptSharedActivation,
+      // 🔗 서버가 열리면 내 LAN 주소를 받아둔다. 이미 로그인된 상태면 그 자리에서 바로 등록.
+      onReady: (info) => { lanInfo = info; if (crmSession) registerDevice(); }
+    });
+  }
   catch (e) { console.error('동기화 서버 시작 실패:', e); }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) crmStartupGate(); });
   touchClock();   // 시작할 때 관측 최대시각 기록(시계 되돌리기 방지) — 기존 킬스위치 코드는 유지(다른 참조 대비), 시작 분기에서는 미사용

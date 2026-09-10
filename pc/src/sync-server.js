@@ -276,6 +276,9 @@ function startSyncServer(store, getWin, opts) {
   server.listen(port, function () {
     const ip = lanIp();
     console.log('[CallPilot] LAN 동기화 서버 http://' + (ip || '0.0.0.0') + ':' + port);
+    // 🔗 계정 기반 자동연결(C안 1단계) — 이 주소를 main 이 받아 서버에 올려두면
+    //    같은 아이디로 로그인한 폰이 IP·코드 입력 없이 찾아온다. 실패해도 LAN 동기화엔 영향 없다.
+    try { if (opts.onReady) opts.onReady({ ip: ip, port: port, code: pairCode }); } catch (e) {}
     let tries = 0;
     (function tryBadge() {
       const w = getWin && getWin();
