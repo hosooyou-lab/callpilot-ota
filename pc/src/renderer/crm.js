@@ -500,7 +500,12 @@ function renderDb(){
   `;
 }
 
-/* 고객 한 줄 */
+/* 고객 한 줄
+   ⚠ 상단 줄 구조 = [이름] + [배지묶음(.crm-row-tags)] 2칸.
+      배지(등급·상태·콜백)를 한 묶음으로 싸는 게 핵심 — 낱개로 두면 자리가 모자랄 때
+      가변폭인 이름만 0px 로 짜부라져 "콜백 배지 달린 고객은 이름이 안 보이는" 버그가 났다.
+      묶어두면 자리가 모자랄 때 배지 묶음이 통째로 아랫줄로 내려가고 이름은 한 줄을 다 쓴다.
+      (폭 계산·컨테이너 쿼리는 styles.css 의 .crm-row-top / .crm-list 쪽 주석 참고) */
 function rowHtml(c){
   const cb=cbInfo(c);
   const gradeTag = c.grade ? `<span class="crm-grade" style="background:${GRADE_COLOR[c.grade]}33;color:${GRADE_COLOR[c.grade]}">${c.grade}</span>` : '';
@@ -509,10 +514,12 @@ function rowHtml(c){
       <div class="crm-av" style="background:${avColor(c.name||c.phoneD)}">${esc(initials(c))}</div>
       <div class="crm-row-main">
         <div class="crm-row-top">
-          <span class="crm-row-name">${esc(dispName(c))}</span>
-          ${gradeTag}
-          <span class="crm-badge" style="background:${STATUS_COLOR[c.status]}2e;color:${STATUS_COLOR[c.status]}">${esc(c.status)}</span>
-          ${cb.key!=='none'&&cb.key!=='soon' ? `<span class="crm-cb crm-cb-${cb.key}">${cb.icon} ${esc(cb.label)}</span>` : (cb.key==='soon'?`<span class="crm-cb crm-cb-soon">${cb.icon} ${esc(cb.label)}</span>`:'')}
+          <span class="crm-row-name" title="${esc(dispName(c))}">${esc(dispName(c))}</span>
+          <span class="crm-row-tags">
+            ${gradeTag}
+            <span class="crm-badge" style="background:${STATUS_COLOR[c.status]}2e;color:${STATUS_COLOR[c.status]}">${esc(c.status)}</span>
+            ${cb.key!=='none' ? `<span class="crm-cb crm-cb-${cb.key}" title="${esc(cb.label)}">${cb.icon} ${esc(cb.label)}</span>` : ''}
+          </span>
         </div>
         <div class="crm-row-sub">${c.name?`<span class="crm-row-ph">${esc(c.phone)}</span> · `:''}메모 ${c.count}건${c.last?` · 최근 ${fmtMD(new Date(c.last).toISOString())}`:''}</div>
       </div>

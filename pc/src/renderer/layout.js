@@ -157,6 +157,21 @@
       document.body.appendChild(sp);
     }
   }
+  // 🚧 왜 안 줄어드는지 알려주기 (2026-09-10)
+  //    화면 배율을 올려두면 CSS 뷰포트가 좁아지고, 그 부족분을 맨 오른쪽 '흡수' 패널이 혼자 떠안아
+  //    최소폭에 눌린다. 그 상태에서는 경계를 아무리 끌어도 1px 도 안 움직인다(아래 maxL 계산 참고).
+  //    실측: 배율 1.2 배만 넘어도 여유가 0 이 된다. 고장난 걸로 오해하기 딱 좋아서 이유를 알려준다.
+  let lastHintAt = 0;
+  function hintNoRoom(rightId) {
+    const now = Date.now();
+    if (now - lastHintAt < 8000) return;   // 같은 안내를 연달아 띄우지 않는다
+    lastHintAt = now;
+    const p = PANELS.find(x => x.id === rightId);
+    const msg = ((p && p.label) || '오른쪽 칸') + ' 칸이 이미 가장 좁아요. Ctrl+0 으로 화면 배율을 되돌리면 더 줄일 수 있어요';
+    try { if (typeof showToast === 'function') { showToast(msg); return; } } catch (e) {}
+    console.log('[layout] ' + msg);
+  }
+
   function startResize(e, leftId, rightId) {
     e.preventDefault();
     const leftNode = el(leftId), rightNode = el(rightId);
@@ -185,6 +200,9 @@
       const slack = Math.max(0, rightNode.getBoundingClientRect().width - minR);
       maxL = Math.min(maxL, startLW + slack);
     }
+    // 오른쪽 이웃이 이미 최소폭이면 이 경계는 오른쪽으로 못 민다 → 왜 그런지 알려준다.
+    // (왼쪽으로 미는 것=오른쪽 칸을 넓히는 건 여전히 되므로 드래그 자체는 막지 않는다)
+    if (maxL - startLW < 2) hintNoRoom(rightId);
     document.body.style.cursor = 'col-resize';
     document.body.classList.add('lay-resizing');
     function move(ev) {

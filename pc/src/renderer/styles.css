@@ -2022,15 +2022,28 @@ body.crm-docked .crm-fab { display: none; }
 .crm-empty.sm { padding: 14px; font-size: 12px; }
 
 /* 고객 리스트 행 */
-.crm-list { display: flex; flex-direction: column; gap: 6px; }
+/* .crm-list = 고객 카드의 폭 기준점(컨테이너). 패널을 좁히면 카드 안 가구(아바타·버튼·여백)를
+   줄여 이름·배지가 쓸 폭을 벌어준다. 창 전체 너비가 아니라 '이 목록의 폭'을 봐야 하므로
+   미디어쿼리가 아니라 컨테이너 쿼리다(패널이 나란히 놓이는 구조라 창 너비는 의미가 없음).
+   ※ Electron 31(크로미움 126)이라 컨테이너 쿼리 지원됨. */
+.crm-list { display: flex; flex-direction: column; gap: 6px; container-type: inline-size; container-name: crmlist; }
 .crm-list.sm { margin-bottom: 6px; }
 .crm-row { display: flex; align-items: center; gap: 11px; padding: 9px 11px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
 .crm-row:hover { background: var(--bg-3); border-color: var(--border-strong); }
 .crm-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0; }
 .crm-av.lg { width: 46px; height: 46px; font-size: 15px; }
 .crm-row-main { flex: 1; min-width: 0; }
-.crm-row-top { display: flex; align-items: center; gap: 7px; flex-wrap: nowrap; min-width: 0; }
+/* 카드 윗줄: [이름] [배지묶음] — 자리가 모자라면 '배지묶음이 통째로' 아랫줄로 내려간다.
+   ⚠ 예전엔 flex-wrap:nowrap 에 배지가 낱개(flex:0 0 auto)로 놓여 있어서, 줄지 못하는 배지들이
+      가변폭인 이름을 밀어내 **이름 폭이 0px** 이 됐다(콜백 배지까지 붙으면 260~340px 패널에서 항상 발생).
+      배지 3개(등급18 + 상태34~52 + 콜백55~60 + 간격14)만 121~144px 인데, 260px 패널에서 윗줄에
+      남는 폭은 51px 뿐이라 애초에 한 줄에 못 넣는다 — 그래서 '줄바꿈'이 정답이고 이름이 우선이다. */
+.crm-row-top { display: flex; align-items: center; flex-wrap: wrap; column-gap: 7px; row-gap: 4px; min-width: 0; }
+/* flex-grow 는 주지 않는다(0 1 auto) — 넓은 패널에서 배지가 이름 바로 옆에 붙는 기존 모양 유지.
+   좁아져 이름만 한 줄을 쓰게 되면 shrink 로 줄어들며 말줄임 처리된다(폭이 0 이 되지는 않음). */
 .crm-row-name { font-size: 14px; font-weight: 700; color: var(--text-1); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 배지 묶음 — 낱개로 흩어지지 않게 한 덩어리로 싼다(내부에서도 모자라면 다시 줄바꿈) */
+.crm-row-tags { display: flex; align-items: center; flex-wrap: wrap; column-gap: 6px; row-gap: 4px; flex: 0 1 auto; min-width: 0; }
 .crm-row-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .crm-row-ph { font-variant-numeric: tabular-nums; }
 .crm-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; flex: 0 0 auto; white-space: nowrap; }
@@ -2039,6 +2052,14 @@ body.crm-docked .crm-fab { display: none; }
 .crm-cb-past { color: #e07a5f; } .crm-cb-today { color: #cf9d52; } .crm-cb-soon { color: #5a9d6b; }
 .crm-row-dial { width: 36px; height: 36px; flex-shrink: 0; cursor: pointer; font-size: 16px; background: var(--bg-3); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text-1); }
 .crm-row-dial:hover { background: var(--accent); border-color: var(--accent); }
+/* 좁은 패널(패널폭 ≈ 355px 이하)에서는 카드 가구를 한 치수 줄여 이름·배지 자리를 벌어준다.
+   기준은 목록 자체 폭(= 패널폭 - 좌우 여백 40 - 테두리 1 - 스크롤바 7). */
+@container crmlist (max-width: 307px) {
+  .crm-row { gap: 8px; padding: 8px 9px; }
+  .crm-av { width: 28px; height: 28px; font-size: 11px; }
+  .crm-row-dial { width: 30px; height: 30px; font-size: 15px; }
+  .crm-row-del { width: 30px; height: 30px; font-size: 13px; }
+}
 
 /* DB 바 */
 .crm-dbbar { display: flex; gap: 8px; margin-bottom: 10px; }
