@@ -613,7 +613,14 @@ try { app.setName('콜파일럿'); } catch (e) {}
 try { app.setAppUserModelId('콜파일럿'); } catch (e) {}
 
 const { registerDialer } = require('./dialer/dialer-main');
-const Store = require('electron-store');
+// node_modules가 통째로 사라져도(2026-09-28 실제 발생) 앱이 멈추지 않게, src/vendor의 묶음본으로 대신 켠다.
+// 묶음본은 src 안에 있어 자동 업데이트로 배포·복구된다.
+let Store;
+try { Store = require('electron-store'); }
+catch (e) {
+  Store = require('./vendor/electron-store.bundle.js');
+  try { logMainError('store-fallback', e); } catch (e2) {}
+}
 // 데이터 파일 이름변경 마이그레이션: jipsooho-data.json → callpilot-data.json (기존 데이터 보존)
 try {
   const ud = app.getPath('userData');
